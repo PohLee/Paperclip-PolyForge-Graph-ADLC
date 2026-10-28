@@ -8,6 +8,50 @@ Decision authority for this role. The JSON block is loaded by the pack at runtim
   "role": "cpo",
   "rules": [
     {
+      "type": "discovery-disposition",
+      "requiredEvidence": [
+        "discovery_brief",
+        "user_research_record",
+        "evidence_ledger",
+        "discovery_options"
+      ],
+      "modes": {
+        "manual": {
+          "allowedRoles": [
+            "human-owner"
+          ],
+          "allowedKinds": [
+            "human"
+          ],
+          "requiresHuman": true,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "assisted": {
+          "allowedRoles": [
+            "human-owner"
+          ],
+          "allowedKinds": [
+            "human"
+          ],
+          "requiresHuman": true,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "autonomous": {
+          "allowedRoles": [
+            "human-owner"
+          ],
+          "allowedKinds": [
+            "human"
+          ],
+          "requiresHuman": true,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        }
+      }
+    },
+    {
       "type": "design-selection",
       "requiredEvidence": [
         "candidate_versions",

@@ -1,4 +1,10 @@
-const task = (id, role, purpose, extra = {}) => ({ id, type: 'task', role, purpose, ...extra, ...(extra.review ? { review: { ...extra.review, decisionType: 'review-disposition' } } : {}) });
+const reviewRole = { 'product-owner': 'cpo', 'external-product-analyst': 'product-manager',
+  'product-manager': 'cpo', 'ui-ux-designer-lead': 'cpo' };
+const task = (id, role, purpose, extra = {}) => {
+  const review = extra.review ?? (extra.produces?.length ? { supervisorRole: reviewRole[role], maxSelfReviews: 5 } : null);
+  return { id, type: 'task', role, purpose, decisionTraceRequired: Boolean(extra.produces?.length), ...extra,
+    ...(review ? { review: { ...review, decisionType: 'review-disposition' } } : {}) };
+};
 const decision = (id, role, outcomes, extra = {}) => ({ id, type: 'decision', role, decisionType: 'design-selection', outcomes, ...extra });
 const join = id => ({ id, type: 'join', mode: 'all' });
 const end = (id, output) => ({ id, type: 'end', output });
@@ -16,7 +22,7 @@ const visualEdges = visualIds.flatMap(id => [
 ]);
 
 export const designGraph = {
-  id: 'ui-ux-design', version: '0.1.0', start: 'classify-design',
+  id: 'ui-ux-design', version: '0.1.2', start: 'classify-design',
   description: 'Research precedes wireframes; independent checks promote one or two directions; four visuals per direction are frozen and checked before finalist selection.',
   visualCandidatePolicy: { minPerDirection: 2, defaultPerDirection: 4, maxPerDirection: 5, instantiatedPerDirection: 4, maxFinalists: 2 },
   nodes: [
@@ -43,7 +49,10 @@ export const designGraph = {
     task('prototype-b', 'ui-ux-designer-lead', 'Prototype finalist B in a separately isolated execution context.', { isolation: 'prototype-b', produces: ['prototype_b'] }),
     join('prototypes-ready'),
     task('experiment-comparison', 'product-manager', 'Compare A/B outcomes against predeclared criteria and exact prototype versions.', { independentOf: ['prototype-a', 'prototype-b'], produces: ['experiment_record'] }),
-    decision('final-design', 'cpo', ['accept', 'rework', 'human'], { decisionTitle: 'Head of Design', requiredInputs: ['finalist_shortlist', 'product_fit_report', 'experiment_record'], reworkTarget: 'principle-research', maxReworks: 3 }),
+    decision('final-design', 'cpo', ['accept', 'rework', 'human'], { decisionTitle: 'Head of Design', requiredInputs: ['finalist_shortlist', 'product_fit_report', 'experiment_record'],
+      selection: { sourceNodeId: 'filter-finalists', outputKey: 'selectedFinalists',
+        frozenNodeIds: ['freeze-a1', 'freeze-a2', 'freeze-a3', 'freeze-a4', 'freeze-b1', 'freeze-b2', 'freeze-b3', 'freeze-b4'] },
+      reworkTarget: 'principle-research', maxReworks: 3 }),
     end('design-complete', 'final_design_identity'), end('design-human', 'human_decision_pending')
   ],
   edges: [

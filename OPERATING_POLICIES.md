@@ -1,5 +1,13 @@
 # ADLC operating policies
 
+## Entry, readiness, and feedback
+
+Select an entry path by the work's evidence and uncertainty. An unclear idea enters product discovery before requirements definition; an approved small change can enter implementation directly. Discovery may advance, request more evidence, or stop without building. A defect enters systematic debugging before any implementation edit. Keep intent, spec, stable requirement IDs, plan, code/test candidate, independent review, fixed-candidate reports, and acceptance decision linked by exact versions. The readiness report must list missing product, UX, security, or architecture decisions as PASS, CONCERNS, or FAIL; the CTO + CAIO gate proceeds only when blocking gaps are resolved. A failed fix returns to classification and root-cause investigation rather than layering another patch over an untested premise.
+
+After acceptance, the release process pins the candidate, plan, preflight and communication, then a named human records an operational start or hold. `ready_for_host_execution` is a handoff, not a deployment result or full release certification. The host enforces production access and returns a verified execution event; only then can release observation record smoke checks and completion, a recovery request, or an incident handoff. A recovery request remains pending until a later host event confirms the resulting state.
+
+Production monitoring evaluates one host-supplied, sourced observation window against a versioned plan and user-facing baseline. Healthy requires current evidence; missing or stale telemetry routes to `health_unverified`. A regression or missed success signal enters defect investigation or the next discovery with the incident evidence. The host remains responsible for telemetry, scheduling, paging and authorized production actions.
+
 ## Review and escalation
 
 For an important artifact, the author checks a specific artifact version and records each self review round: findings with severity, fixes, remaining issues and supporting evidence. Stop self review when no P0/P1 remains or after round five. Submit the full history and any remaining P0/P1 to the Graph-designated review supervisor (`node.review.supervisorRole`). The fifth round is a handoff boundary, not acceptance. That reviewer independently inspects the artifact, records acceptance or bounded rework, and gives explicit treatment to known risks. A new submission retains earlier attempts in the audit trail. Each role's `roles/<role-id>/role.md` states its separate organizational reporting line.
@@ -15,6 +23,8 @@ Adapted from PolyLens [Collision Engine](https://github.com/PohLee/PolyLens/blob
 3. Test a phased plan for priority disputes; seek the smallest scope covering compatible non-negotiables for scope disputes; compare impact, likelihood, reversibility and mitigation for risk; inspect commitment and evidence for resource disputes. Use a focused challenge and response when needed.
 4. Obtain a revised position from each side. Record resolved and remaining issues. When a material conflict remains, save the options and tradeoffs, pause affected progress and ask the authenticated human owner. The human decision is recorded before work resumes, in every automation mode.
 
+In protocol v2, the CPO and CTO + CAIO each record their position from their own current task attempt. `open-conflict` cites both signed Decision IDs, a sourced negotiation round with both responses, and explicit unresolved human options. Each option specifies continue, an upstream rework target, or stop. A continued gate cites the human resolution; rework starts a new target attempt. Retry or rework requires fresh positions for affected attempts.
+
 ## Product memory and versioned evidence
 
 Before a fix or feature edit, read relevant active product decisions, change history and known constraints. A missing retrieval result is an unknown, not proof that no constraint exists. If the intended edit changes approved behavior, create a proposed product decision replacement and obtain its required authority before implementation. Link replacement to the old decision; preserve both and their reasons.
@@ -23,4 +33,4 @@ Each handoff names the exact requirement, design and candidate versions. QA, sec
 
 ## Scope of this version
 
-The pack publishes the three MVP graphs. Market research as a separate workflow, automatic scheduling and release automation are not defined here; their scope remains to be settled after scenario validation.
+The pack publishes seven graphs: discovery, design, implementation, verification, release preparation, release observation, and one-window production monitoring. It does not define a pipeline, full release certification, automated deployment, monitoring ingestion or scheduling. Those require host integrations and separately approved operating rules.

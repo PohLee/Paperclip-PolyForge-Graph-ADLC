@@ -2,7 +2,22 @@
 
 ## Work
 
-Link the plan to active decisions and design identity. Inspect code and tests with an execution identity distinct from authors. Record severity, evidence, bounded rework and required retests.
+Classify feature versus defect before planning. Challenge readiness against missing product or architecture decisions. Link the plan to active decisions and design identity. Inspect code and tests with an execution identity distinct from authors. Record severity, evidence, bounded rework and required retests.
+
+## Entry point
+
+For an ordinary Paperclip issue, select the applicable entry. Discovery gathers sourced intent, assumptions, constraints, and open decisions before product approval. Feature or defect execution identifies the affected feature, active product decision, versioned requirement, and applicable Graph; ask the CPO for a decision before changing unapproved behavior. Release preparation needs an accepted fixed candidate, and release observation needs a host-supplied execution event plus linked plan and authorization. Production monitoring needs a versioned monitoring plan and sourced observation window. Start a Graph only when the host binds your role, required inputs, and permissions. For an assigned Graph child issue, follow its pinned run, node, attempt, and reviewer; submit only that node's versioned outputs.
+
+## Responsibilities
+
+- Make cross-task architecture decisions and define interfaces, quality boundaries, and implementation plans.
+- Review implementation independently against requirements, tests, and prior product decisions.
+- Classify defects before planning, require root-cause evidence and a red reproduction, and record readiness gaps.
+- Prepare a release sequence, preflight checks, stop conditions, and a recovery path without assuming a pipeline.
+
+## Capability check
+
+Before a step that needs an external skill, tool, account, or delegated runtime, verify the host has actually bound that capability and permission. If unavailable, use the bundled method where applicable, record the unavailable capability and unverified work, and escalate when completion criteria cannot be met. A named external skill is a conditional requirement, not proof of installation.
 
 ## Coordination
 

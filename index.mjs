@@ -4,25 +4,26 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { engineeringGraphs } from './engineering-graphs.mjs';
 import { designGraph } from './design-graph.mjs';
+import { lifecycleGraphs } from './lifecycle-graphs.mjs';
 import { roleCatalog } from './roles/catalog.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const docs = ['soul', 'role', 'goal', 'instruction', 'decision_model'];
 const digest = value => createHash('sha256').update(value).digest('hex');
 const roleSkills = {
-  'cpo': ['product-memory', 'design-evaluation', 'conflict-resolution', 'versioned-evidence'],
-  'internal-product-analyst': ['product-memory', 'versioned-evidence'],
-  'external-product-analyst': ['design-evaluation', 'versioned-evidence'],
-  'product-manager': ['product-memory', 'design-evaluation', 'versioned-evidence'],
-  'product-owner': ['product-memory', 'versioned-evidence'],
-  'ui-ux-designer-lead': ['product-memory', 'design-evaluation', 'review-handoff'],
-  'cto-caio': ['product-memory', 'conflict-resolution', 'review-handoff', 'versioned-evidence'],
-  'principal-engineer': ['product-memory', 'review-handoff', 'versioned-evidence'],
-  'lead-engineer': ['product-memory', 'review-handoff', 'versioned-evidence'],
-  'qa-engineer': ['product-memory', 'versioned-evidence'],
-  'security-engineer': ['review-handoff', 'versioned-evidence']
+  'cpo': ['product-memory', 'design-evaluation', 'conflict-resolution', 'versioned-evidence', 'product-direction', 'lifecycle-orchestration', 'product-discovery'],
+  'internal-product-analyst': ['product-memory', 'versioned-evidence', 'research-brief', 'requirements-discovery', 'product-discovery'],
+  'external-product-analyst': ['design-evaluation', 'versioned-evidence', 'research-brief', 'requirements-discovery', 'product-discovery'],
+  'product-manager': ['product-memory', 'design-evaluation', 'versioned-evidence', 'product-definition', 'requirements-discovery', 'product-discovery'],
+  'product-owner': ['product-memory', 'versioned-evidence', 'product-definition', 'requirements-discovery', 'lifecycle-orchestration', 'product-discovery', 'release-process'],
+  'ui-ux-designer-lead': ['product-memory', 'design-evaluation', 'review-handoff', 'design-delivery'],
+  'cto-caio': ['product-memory', 'conflict-resolution', 'review-handoff', 'versioned-evidence', 'engineering-delivery', 'lifecycle-orchestration', 'release-process', 'production-monitoring'],
+  'principal-engineer': ['product-memory', 'review-handoff', 'versioned-evidence', 'engineering-delivery', 'development-loop', 'systematic-debugging', 'release-process'],
+  'lead-engineer': ['product-memory', 'review-handoff', 'versioned-evidence', 'engineering-delivery', 'development-loop', 'systematic-debugging', 'release-process'],
+  'qa-engineer': ['product-memory', 'versioned-evidence', 'verification-review', 'release-process', 'production-monitoring'],
+  'security-engineer': ['review-handoff', 'versioned-evidence', 'verification-review']
 };
-const skillIds = ['product-memory', 'review-handoff', 'design-evaluation', 'conflict-resolution', 'versioned-evidence'];
+const skillIds = [...new Set(Object.values(roleSkills).flat())];
 const skills = Object.fromEntries(skillIds.map(id => {
   const source = `skills/${id}.md`, content = readFileSync(resolve(root, source), 'utf8');
   return [id, { id, source, content, digest: digest(content) }];
@@ -44,7 +45,7 @@ function loadRole(spec) {
 }
 
 const roles = Object.fromEntries(roleCatalog.map(spec => [spec.id, loadRole(spec)]));
-const graphs = [designGraph, ...engineeringGraphs];
+const graphs = [lifecycleGraphs[0], designGraph, ...engineeringGraphs, ...lifecycleGraphs.slice(1)];
 const operatingPolicies = readFileSync(resolve(root, 'OPERATING_POLICIES.md'), 'utf8');
 const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.rules.flatMap(rule =>
   Object.entries(rule.modes).map(([mode, policy]) => ({
@@ -56,12 +57,16 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 ));
 
 export const pack = {
-  id: 'adlc', version: '0.1.1', schemaVersion: 1,
+  id: 'adlc', version: '0.1.6', schemaVersion: 1,
   graphs, roles, skills, decisionRules,
   graphStartRoles: {
+    'product-discovery': ['product-owner', 'cpo', 'human-owner'],
     'ui-ux-design': ['product-owner', 'cpo', 'human-owner'],
     implementation: ['product-owner', 'principal-engineer', 'cto-caio', 'human-owner'],
-    verification: ['product-owner', 'cpo', 'cto-caio', 'human-owner']
+    verification: ['product-owner', 'cpo', 'cto-caio', 'human-owner'],
+    'release-process': ['product-owner', 'cto-caio', 'human-owner'],
+    'release-observation': ['lead-engineer', 'cto-caio', 'human-owner'],
+    'production-monitoring': ['qa-engineer', 'cto-caio', 'human-owner']
   },
   policyDocuments: { operatingPolicies },
   policyDocumentDigests: { operatingPolicies: digest(operatingPolicies) },
@@ -69,17 +74,46 @@ export const pack = {
     binding: 'Bind every role to a runtime actor at deployment. A single agent may hold several roles.',
     independentReview: 'The review execution/session identity must differ from every author execution named by independentOf; one Agent may hold both roles in separate executions.',
     humanOwner: 'Bind human-owner to an authenticated human operation identity; an agent suggestion is never a human approval.',
-    capabilities: 'Resolve each role capabilityRequirement to a real tool, permission or harness before dispatch. Bundled skills are prompt instructions, not claims about installed tools.'
+    capabilities: 'Resolve each role capabilityRequirement to a real tool, permission or harness before dispatch. Bundled skills are prompt instructions, not claims about installed tools.',
+    releaseExecution: 'The host must verify that the acceptance decision covers the exact candidate, enforce the named human release-start decision on its exact plan and candidate before any production action, and validate the execution event against that authorization. Start release-observation only from that verified event; the Graph never invokes a pipeline or certifies a release.',
+    monitoringInput: 'The host supplies a versioned monitoring plan and sourced observations with freshness. Scheduling, telemetry collection, paging and automatic recovery are external capabilities; absence of an alert is not health evidence.'
+  },
+  optionalExternalMethods: {
+    'ui-ux-designer-lead': ['impeccable and design tooling only when installed and authorized by the host'],
+    'lead-engineer': ['Prime Agent, OpenCode, or Codex subagent runtimes only when installed and authorized by the host'],
+    'security-engineer': ['security_review_verify, Cloudflare, or security-audit-skill only when installed and authorized by the host']
+  },
+  methodReferences: {
+    lifecycle: 'https://claude.com/resources/articles/the-ai-native-sdlc-playbook',
+    adaptivePlanning: 'https://www.bmadcode.com/method',
+    debugging: 'https://github.com/obra/superpowers/tree/main/skills/systematic-debugging',
+    requirements: 'https://github.com/mattpocock/skills',
+    development: 'https://github.com/cursor/plugins/tree/main/pstack',
+    discovery: 'https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works',
+    release: 'https://sre.google/sre-book/release-engineering/',
+    monitoring: 'https://sre.google/sre-book/monitoring-distributed-systems/'
   },
   policies: {
+    lifecycle: {
+      entryPaths: ['idea', 'planned-feature', 'clear-change', 'defect', 'production-signal'],
+      artifactChain: ['source-request', 'discovery-evidence', 'accepted-intent', 'accepted-spec', 'implementation-plan', 'candidate-and-tests', 'independent-review', 'fixed-candidate-verification', 'acceptance-decision', 'release-plan', 'host-execution-event', 'production-observation'],
+      planningDepth: 'scale-to-uncertainty-and-impact',
+      readiness: 'pass-concerns-fail-with-explicit-gaps',
+      releaseAndMonitor: 'pack-graphs-require-host-supplied-execution-and-observation'
+    },
+    discovery: { decision: ['advance', 'more-research', 'stop'], requiredRecord: 'sourced-intent-and-evidence-ledger', buildCommitment: false },
+    releaseProcess: { pipeline: 'unselected', scope: 'operational-flow-only', certification: false, execution: 'host-supplied-event', startAuthority: 'authenticated-human', outcomeAuthority: 'authenticated-human' },
+    productionMonitoring: { unit: 'one-observation-window', symptoms: ['latency', 'traffic', 'errors', 'saturation'], missingTelemetry: 'unknown', ingestionAndScheduling: 'host-responsibility' },
     selfReview: { maxRoundsPerSubmission: 5, exitWhen: 'No P0/P1 remains or round 5 completes', supervisorRequired: true, limitIsApproval: false, preserveAttempts: true },
-    productMemory: { beforeChange: ['active_product_decisions', 'change_history', 'known_constraints'], behaviorChangeRequires: 'product-decision-replacement', supersession: 'append-and-link', missingContext: 'escalate-unknown' },
+    productMemory: { beforeChange: ['active_product_decisions', 'change_history', 'known_constraints'], behaviorChangeRequires: 'product-decision-replacement', proposalRequired: true, supersession: 'append-and-link', missingContext: 'escalate-unknown' },
     evidence: { handoff: 'versioned-artifact-identity', reportsBindTo: 'exact-candidate-version', changedCandidate: 'invalidate-affected-reports-and-reverify', preserveStaleReports: true },
     audit: { decisions: 'all-human-and-agent', states: ['accept', 'reject', 'rework', 'defer', 'escalate', 'supersede'], writeBeforeProceed: true, appendOnly: true },
     cpoCtoConflict: {
+      protocolVersion: 2,
       source: 'PolyLens collision and synthesis methods adapted to CPO/CTO',
-      dimensions: ['scope', 'timeline', 'resource', 'risk', 'success_criteria'],
+      dimensions: ['scope', 'timeline', 'resources', 'risk', 'successCriteria'],
       classes: ['priority', 'scope', 'risk', 'resource', 'fundamental'],
+      humanDispositions: ['continue', 'rework', 'stop'],
       steps: ['preserve-original-positions-and-evidence', 'deduplicate-and-classify-conflicts', 'propose-resolution-by-class', 'request-revised-position-from-both', 'record-convergence-or-pause-for-human'],
       unresolved: 'human-owner', appliesInEveryMode: true
     }

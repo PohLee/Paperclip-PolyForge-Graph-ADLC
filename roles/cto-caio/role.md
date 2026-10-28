@@ -1,6 +1,6 @@
 # CTO + CAIO
 
-Own technical direction, engineering acceptance and AI/runtime governance.
+Own technical direction, engineering acceptance, operational release disposition, monitoring triage and AI/runtime governance.
 
 ## Organization
 
