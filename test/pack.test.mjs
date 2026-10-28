@@ -9,10 +9,10 @@ test('published pack registers with the core validator and has the lifecycle inv
   await engine.registerPack(pack);
   assert.deepEqual(pack.graphs.map(graph => graph.id), [
     'product-discovery', 'ui-ux-design', 'implementation', 'verification',
-    'release-process', 'release-observation', 'production-monitoring'
+    'release-process', 'release-observation', 'production-monitoring', 'system-architecture', 'code-delivery'
   ]);
   assert.equal(Object.keys(pack.roles).length, 11);
-  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 7);
+  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 9);
 });
 
 test('every task role and supervisor maps to a documented blueprint', () => {
@@ -56,7 +56,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.1.6');
+  assert.equal(pack.version, '0.1.7');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === null).length, 2);
@@ -66,7 +66,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
     assert.match(role.documents.instruction, /organizational reporting line.*Graph node/s);
   }
-  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.2', '0.1.2', '0.1.1', '0.1.0', '0.1.0', '0.1.0']);
+  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.2', '0.1.3', '0.1.2', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
   assert.equal(pack.policies.cpoCtoConflict.protocolVersion, 2);
 });
 
@@ -160,8 +160,10 @@ async function playGraph(graphId, routes, expectedStatus) {
   const feature = `scenario-${graphId}`;
   const baseline = await engine.recordProductDecision({ feature, actor: starter, status: 'approved', outcome: 'Use scenario baseline', reason: 'Scenario has an approved starting product decision', evidence: [{ kind: 'requirement', id: 'REQ-1' }] });
   const input = { feature, versioned_requirement: { id: 'REQ-1', version: 'v1' }, product_decision_refs: [baseline.id],
-    ...(graphId === 'implementation' ? { final_design_identity: { id: 'DESIGN-1', version: 'v1' } } : {}),
-    ...(graphId === 'verification' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' } } : {}),
+    ...(graphId === 'implementation' ? { final_design_identity: { id: 'DESIGN-1', version: 'v1' }, architecture_context: { disposition: 'not-applicable', rationale: 'Scenario uses existing architecture without interface changes' } } : {}),
+    ...(graphId === 'verification' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, acceptance_criteria: [{ id: 'AC-1', description: 'Expected behavior works', requirementIds: ['REQ-1'] }] } : {}),
+    ...(graphId === 'system-architecture' ? { system_id: 'orders', architecture_brief: 'Pin the order API boundaries' } : {}),
+    ...(graphId === 'code-delivery' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, delivery_target: { repository: 'owner/repo', prUrl: 'https://github.com/owner/repo/pull/1', headSha: 'a'.repeat(40) }, required_checks: ['test'], required_approvals: 1 } : {}),
     ...(graphId === 'product-discovery' ? { source_request: { id: 'IDEA-1', version: 'v1' } } : {}),
     ...(graphId === 'release-process' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, verification_decision: { id: 'ACCEPT-1', version: 'v1' } } : {}),
     ...(graphId === 'release-observation' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, release_execution_event: { id: 'EXEC-1', version: 'v1' }, release_plan_identity: { id: 'PLAN-1', version: 'v1' }, release_authorization_decision: { id: 'START-1', version: 'v1' } } : {}),
@@ -183,7 +185,7 @@ async function playGraph(graphId, routes, expectedStatus) {
       : rule?.requiresHuman ? { kind: 'human', id: `owner-${node.role}`, roles: ['human-owner', node.role] }
       : { kind: 'agent', id: node.role, roles: [node.role], executionId: `${node.role}-${node.id}-${count}` };
     if (node.type === 'decision') {
-      const outcome = next[node.id]?.shift();
+      const outcome = next[node.id]?.shift() ?? (node.id === 'implementation-shape' ? 'parallel' : undefined);
       assert.ok(outcome, `missing route for ${node.id}`);
       const currentRefs = (node.candidateNodes ?? []).flatMap(id => current.nodeStates[id].artifacts.map(artifact => ({ artifactId: artifact.id, version: artifact.version })));
       const evidence = rule.requiredEvidence.map(kind => ({ kind, subjectRefs: currentRefs }));
@@ -205,8 +207,19 @@ async function playGraph(graphId, routes, expectedStatus) {
         ? ['freeze-a1', 'freeze-b1'].filter(id => current.nodeStates[id].status === 'completed')
           .map(id => ({ artifactId: current.nodeStates[id].artifacts[0].id,
           version: current.nodeStates[id].artifacts[0].version })) : null;
+      const contractOutput = node.outputContract === 'acceptance-matrix'
+        ? { candidateRefs: [{ artifactId: 'CODE-1', version: 'v1' }], criteria: [{ id: 'AC-1', result: 'pass', evidence: [{ kind: 'report', ref: 'artifact://qa', observed: 'Scenario passed' }] }] }
+        : node.outputContract === 'architecture-baseline'
+        ? { systemId: 'orders', summary: 'Order API boundary', diagram: 'API -> database', implementationStatus: 'proposed', invariants: [{ id: 'INV-001', rule: 'Only API writes', enforcement: 'Credentials', proof: 'ACL test', status: 'active' }] }
+        : node.outputContract === 'delivery-report'
+        ? { candidateRefs: [{ artifactId: 'CODE-1', version: 'v1' }], ...input.delivery_target, state: routes['delivery-gate'] === 'merged' ? 'merged' : 'open',
+          checks: [{ name: 'test', headSha: input.delivery_target.headSha, sourceRef: 'https://ci/check/1', result: 'pass' }],
+          approvals: [{ actorId: 'reviewer', headSha: input.delivery_target.headSha, sourceRef: 'https://pr/review/1' }],
+          review: { headSha: input.delivery_target.headSha, sourceRef: 'artifact://review/1', verdict: 'approve' }, unresolvedFindings: 0, mergeable: true,
+          ...(routes['delivery-gate'] === 'merged' ? { mergeEvent: { headSha: input.delivery_target.headSha, mergeSha: 'b'.repeat(40), sourceRef: 'https://pr/merge/1' } } : {}) }
+        : {};
       await engine.submitNode({ runId: run.id, nodeId: node.id, actor,
-        output: { result: node.id, ...(selectedFinalists ? { selectedFinalists } : {}) }, artifacts,
+        output: { result: node.id, ...(selectedFinalists ? { selectedFinalists } : {}), ...contractOutput }, artifacts,
         decisionIds: workDecision ? [workDecision.id] : [] });
       if (node.review) {
         await engine.recordSelfReview({ runId: run.id, nodeId: node.id, actor, artifactVersion: 'v1', findings: [] });
@@ -284,7 +297,7 @@ test('method skills and provenance are included in the runtime pack', () => {
   assert.ok(pack.roles['lead-engineer'].skills.includes('systematic-debugging'));
   assert.ok(pack.roles['lead-engineer'].skills.includes('development-loop'));
   assert.ok(pack.roles['product-owner'].skills.includes('lifecycle-orchestration'));
-  assert.deepEqual(Object.keys(pack.methodReferences).sort(), ['adaptivePlanning', 'debugging', 'development', 'discovery', 'lifecycle', 'monitoring', 'release', 'requirements']);
+  assert.deepEqual(Object.keys(pack.methodReferences).sort(), ['adaptivePlanning', 'blueprint', 'debugging', 'development', 'discovery', 'factory', 'lifecycle', 'monitoring', 'release', 'requirements']);
   assert.equal(pack.policies.lifecycle.readiness, 'pass-concerns-fail-with-explicit-gaps');
 });
 
@@ -374,4 +387,27 @@ test('monitoring evaluates one sourced window and routes health, watch, incident
     assert.equal(run.nodeStates[endNode].status, 'completed');
   }
   assert.equal(pack.policies.productionMonitoring.ingestionAndScheduling, 'host-responsibility');
+});
+
+test('all four implementation shapes join only their active branches and review an integrated candidate', async () => {
+  for (const shape of ['backend', 'frontend', 'fullstack', 'parallel']) {
+    const run = await playGraph('implementation', { 'classify-implementation': 'feature', 'readiness-gate': 'proceed',
+      'implementation-shape': shape, 'implementation-gate': 'accept' }, 'completed');
+    for (const branch of ['backend', 'frontend', 'fullstack']) {
+      assert.equal(run.nodeStates[branch].status, branch === shape || shape === 'parallel' && branch !== 'fullstack' ? 'completed' : 'pending');
+    }
+    assert.equal(run.nodeStates['integrate-candidate'].status, 'completed');
+    assert.equal(run.nodeStates['independent-implementation-review'].status, 'completed');
+    assert.equal(run.nodeStates['integrate-candidate'].artifacts[0].kind, 'implementation_candidate');
+  }
+});
+
+test('optional architecture and code-delivery graphs execute their documented outcomes', async () => {
+  const architecture = await playGraph('system-architecture', { 'architecture-gate': ['rework', 'accept'] }, 'completed');
+  assert.equal(architecture.nodeStates['architecture-baseline'].attempts.length, 2);
+  assert.equal(architecture.nodeStates['architecture-baseline'].output.implementationStatus, 'proposed');
+  for (const outcome of ['ready', 'merged', 'hold']) {
+    const run = await playGraph('code-delivery', { 'delivery-gate': outcome }, 'completed');
+    assert.equal(run.nodeStates['delivery-gate'].outcome, outcome);
+  }
 });

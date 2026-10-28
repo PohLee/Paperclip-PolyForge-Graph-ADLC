@@ -10,6 +10,7 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Publish an acceptance matrix covering every input criterion with observed proof or an explicit unverified gap on the fixed candidate.
 - Independently verify frontend and backend behavior against PRD acceptance criteria on a fixed candidate.
 - Run regression and exploratory checks; publish pass, fail, and untested findings with reproducible evidence.
 - Compare post-release and production observation windows with a stated user-facing baseline; hand off actionable incidents.

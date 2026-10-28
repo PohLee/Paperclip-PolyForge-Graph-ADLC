@@ -33,4 +33,14 @@ Each handoff names the exact requirement, design and candidate versions. QA, sec
 
 ## Scope of this version
 
-The pack publishes seven graphs: discovery, design, implementation, verification, release preparation, release observation, and one-window production monitoring. It does not define a pipeline, full release certification, automated deployment, monitoring ingestion or scheduling. Those require host integrations and separately approved operating rules.
+The pack publishes nine graphs: discovery, design, implementation, verification, release preparation, release observation, one-window production monitoring, optional system architecture, and optional code delivery. Pipeline selection, full release certification, deployment execution, monitoring ingestion and scheduling require host integrations and separately approved operating rules.
+
+## Structured evidence contracts
+
+Core 0.4.0 validates the contracts in `docs/EVIDENCE_CONTRACTS.md`. Verification covers every approved input criterion exactly once and ties proof to the fixed candidate. Failed criteria block acceptance; unverified criteria require an authenticated human exception with reason, risk and exact matrix version. The host verifies that the input criterion list covers the approved requirement and that cited observations are authentic.
+
+Contracted output and artifact versions stay immutable per attempt. Their first self review hands off to the supervisor, including unresolved findings, so correction uses explicit rework and a fresh version. This exception to repeated self review prevents changing an artifact without updating its structured output.
+
+Implementation selects backend, frontend, fullstack or parallel after planning; all active branches join into one integrated candidate for independent review. Architecture context names an accepted baseline and decision or a reviewed non-applicability rationale. Invariants retain stable IDs across revisions, and acceptance does not imply implementation completion.
+
+Optional code delivery records required checks, review, approvals and merge observations on the exact PR head. The host verifies current repository state and eligibility. A ready/merged code-delivery decision does not authorize a production action.

@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { engineeringGraphs } from './engineering-graphs.mjs';
 import { designGraph } from './design-graph.mjs';
 import { lifecycleGraphs } from './lifecycle-graphs.mjs';
+import { architectureDeliveryGraphs } from './architecture-delivery-graphs.mjs';
 import { roleCatalog } from './roles/catalog.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
@@ -23,6 +24,9 @@ const roleSkills = {
   'qa-engineer': ['product-memory', 'versioned-evidence', 'verification-review', 'release-process', 'production-monitoring'],
   'security-engineer': ['review-handoff', 'versioned-evidence', 'verification-review']
 };
+for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'product-owner']) roleSkills[role].push('architecture-baseline');
+for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'qa-engineer']) roleSkills[role].push('code-delivery', 'check-execution');
+roleSkills.cpo.push('verification-review');
 const skillIds = [...new Set(Object.values(roleSkills).flat())];
 const skills = Object.fromEntries(skillIds.map(id => {
   const source = `skills/${id}.md`, content = readFileSync(resolve(root, source), 'utf8');
@@ -45,8 +49,9 @@ function loadRole(spec) {
 }
 
 const roles = Object.fromEntries(roleCatalog.map(spec => [spec.id, loadRole(spec)]));
-const graphs = [lifecycleGraphs[0], designGraph, ...engineeringGraphs, ...lifecycleGraphs.slice(1)];
+const graphs = [lifecycleGraphs[0], designGraph, ...engineeringGraphs, ...lifecycleGraphs.slice(1), ...architectureDeliveryGraphs];
 const operatingPolicies = readFileSync(resolve(root, 'OPERATING_POLICIES.md'), 'utf8');
+const evidenceContracts = readFileSync(resolve(root, 'docs/EVIDENCE_CONTRACTS.md'), 'utf8');
 const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.rules.flatMap(rule =>
   Object.entries(rule.modes).map(([mode, policy]) => ({
     type: rule.type, mode, allowedRoles: policy.allowedRoles, allowedKinds: policy.allowedKinds,
@@ -57,9 +62,11 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 ));
 
 export const pack = {
-  id: 'adlc', version: '0.1.6', schemaVersion: 1,
+  id: 'adlc', version: '0.1.7', schemaVersion: 1,
   graphs, roles, skills, decisionRules,
   graphStartRoles: {
+    'system-architecture': ['principal-engineer', 'cto-caio', 'human-owner'],
+    'code-delivery': ['principal-engineer', 'cto-caio', 'human-owner'],
     'product-discovery': ['product-owner', 'cpo', 'human-owner'],
     'ui-ux-design': ['product-owner', 'cpo', 'human-owner'],
     implementation: ['product-owner', 'principal-engineer', 'cto-caio', 'human-owner'],
@@ -68,9 +75,10 @@ export const pack = {
     'release-observation': ['lead-engineer', 'cto-caio', 'human-owner'],
     'production-monitoring': ['qa-engineer', 'cto-caio', 'human-owner']
   },
-  policyDocuments: { operatingPolicies },
-  policyDocumentDigests: { operatingPolicies: digest(operatingPolicies) },
+  policyDocuments: { operatingPolicies, evidenceContracts },
+  policyDocumentDigests: { operatingPolicies: digest(operatingPolicies), evidenceContracts: digest(evidenceContracts) },
   runtimeRequirements: {
+    coreContracts: 'Requires Core 0.4.0 or later for input, output and gate contracts. Host check runner is an explicit capability; verify external evidence authenticity and select the current approved architecture baseline before dispatch.',
     binding: 'Bind every role to a runtime actor at deployment. A single agent may hold several roles.',
     independentReview: 'The review execution/session identity must differ from every author execution named by independentOf; one Agent may hold both roles in separate executions.',
     humanOwner: 'Bind human-owner to an authenticated human operation identity; an agent suggestion is never a human approval.',
@@ -84,6 +92,8 @@ export const pack = {
     'security-engineer': ['security_review_verify, Cloudflare, or security-audit-skill only when installed and authorized by the host']
   },
   methodReferences: {
+    factory: 'https://github.com/owainlewis/factory/tree/5b0ff7e0bff9dc5a2ed405c335985a30f00b0108',
+    blueprint: 'https://github.com/owainlewis/blueprint/tree/74210b5f4f07e6a213d2d3950603f55a868c9f4a',
     lifecycle: 'https://claude.com/resources/articles/the-ai-native-sdlc-playbook',
     adaptivePlanning: 'https://www.bmadcode.com/method',
     debugging: 'https://github.com/obra/superpowers/tree/main/skills/systematic-debugging',
@@ -94,6 +104,10 @@ export const pack = {
     monitoring: 'https://sre.google/sre-book/monitoring-distributed-systems/'
   },
   policies: {
+    acceptanceProof: { coverage: 'every-criterion-once', fail: 'blocks-accept', unverified: 'human-owner-exception-with-reason-risk-and-matrix-version' },
+    implementationShape: ['backend', 'frontend', 'fullstack', 'parallel'],
+    architecture: { baseline: 'accepted-version-and-decision', invariants: 'stable-INV-IDs', implementationStatus: 'separate-from-acceptance' },
+    codeDelivery: { optional: true, evidence: 'pinned-PR-head', actions: 'observe-only', productionAuthority: false },
     lifecycle: {
       entryPaths: ['idea', 'planned-feature', 'clear-change', 'defect', 'production-signal'],
       artifactChain: ['source-request', 'discovery-evidence', 'accepted-intent', 'accepted-spec', 'implementation-plan', 'candidate-and-tests', 'independent-review', 'fixed-candidate-verification', 'acceptance-decision', 'release-plan', 'host-execution-event', 'production-observation'],

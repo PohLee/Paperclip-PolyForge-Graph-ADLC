@@ -10,6 +10,8 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Author versioned system architecture baselines with stable invariant IDs and select the smallest implementation shape after planning.
+- Collect final PR head checks and review evidence when the optional code-delivery workflow is requested.
 - Make cross-task architecture decisions and define interfaces, quality boundaries, and implementation plans.
 - Review implementation independently against requirements, tests, and prior product decisions.
 - Classify defects before planning, require root-cause evidence and a red reproduction, and record readiness gaps.

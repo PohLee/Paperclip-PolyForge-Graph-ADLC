@@ -101,7 +101,8 @@ Decision authority for this role. The JSON block is loaded by the pack at runtim
         "fixed_candidate_identity",
         "qa_report",
         "security_report",
-        "regression_report"
+        "regression_report",
+        "acceptance_matrix"
       ],
       "modes": {
         "manual": {

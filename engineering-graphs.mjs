@@ -13,7 +13,7 @@ const edge = (from, to, when) => when === undefined ? { from, to } : { from, to,
 
 export const engineeringGraphs = [
   {
-    id: 'implementation', version: '0.1.2', start: 'classify-implementation',
+    id: 'implementation', version: '0.1.3', start: 'classify-implementation', inputContracts: ['architecture-context'],
     description: 'Route features to readiness and defects through root-cause evidence and a red reproduction, then plan, build, independently review, and accept the fixed candidate.',
     nodes: [
       decision('classify-implementation', 'principal-engineer', 'implementation-routing', ['feature', 'defect'], { requiredInputs: ['versioned_requirement', 'final_design_identity', 'product_decision_refs'] }),
@@ -22,30 +22,34 @@ export const engineeringGraphs = [
       task('implementation-readiness', 'principal-engineer', 'Challenge the requirement, design, contracts, and defect evidence where applicable; record PASS, CONCERNS, or FAIL with owners for missing decisions.', { produces: ['readiness_report'], review: { supervisorRole: 'cto-caio', maxSelfReviews: 5 } }),
       decision('readiness-gate', 'cto-caio', 'implementation-readiness', ['proceed', 'rework', 'human'], { requiredInputs: ['readiness_report'], reworkTarget: 'classify-implementation', maxReworks: 3 }),
       task('implementation-plan', 'principal-engineer', 'Read active product decisions, design identity, and readiness result; define the smallest implementation boundary, interfaces, and verification plan.', { requiredInputs: ['versioned_requirement', 'final_design_identity', 'product_decision_refs', 'readiness_report'], produces: ['implementation_plan'], review: { supervisorRole: 'cto-caio', maxSelfReviews: 5 } }),
+      decision('implementation-shape', 'principal-engineer', 'implementation-shape', ['backend', 'frontend', 'fullstack', 'parallel'], { requiredInputs: ['implementation_plan', 'architecture_context'] }),
       task('backend', 'lead-engineer', 'Implement backend scope and run relevant tests; publish a versioned candidate.', { produces: ['backend_candidate', 'backend_test_report'], review: { supervisorRole: 'principal-engineer', maxSelfReviews: 5 } }),
       task('frontend', 'lead-engineer', 'Implement frontend scope and run relevant tests; publish a versioned candidate.', { produces: ['frontend_candidate', 'frontend_test_report'], review: { supervisorRole: 'principal-engineer', maxSelfReviews: 5 } }),
+      task('fullstack', 'lead-engineer', 'Implement the coupled frontend and backend slice in one execution and test its boundary.', { produces: ['fullstack_candidate', 'fullstack_test_report'] }),
       join('implementation-ready'),
-      task('independent-implementation-review', 'principal-engineer', 'Inspect code, tests and requirements from a distinct execution identity; report defects by severity.', { independentOf: ['backend', 'frontend'], produces: ['implementation_review'] }),
+      task('integrate-candidate', 'lead-engineer', 'Integrate only the active implementation branches; pin one candidate and record its branch artifact references, check logs and acceptance criterion coverage.', { requiredInputAny: [['backend_candidate', 'frontend_candidate', 'fullstack_candidate']], produces: ['implementation_candidate', 'integration_test_report'] }),
+      task('independent-implementation-review', 'principal-engineer', 'Inspect the integrated code, tests, architecture invariants and requirements from a distinct execution identity; report defects by severity.', { independentOf: ['backend', 'frontend', 'fullstack', 'integrate-candidate'], produces: ['implementation_review'] }),
       task('cpo-alignment', 'cpo', 'State the current product position on scope, timeline, resources, risk and success criteria before the implementation gate.', { produces: ['product_alignment'], review: null }),
       task('cto-alignment', 'cto-caio', 'State the current technical position on scope, timeline, resources, risk and success criteria before the implementation gate.', { produces: ['technical_alignment'], review: null }),
       join('alignment-ready'),
-      decision('implementation-gate', 'cto-caio', 'implementation-acceptance', ['accept', 'rework', 'human'], { requiredInputs: ['implementation_review', 'backend_candidate', 'frontend_candidate'], candidateNodes: ['backend', 'frontend'], candidateKinds: ['backend_candidate', 'frontend_candidate'], reworkTarget: 'classify-implementation', maxReworks: 3 }),
+      decision('implementation-gate', 'cto-caio', 'implementation-acceptance', ['accept', 'rework', 'human'], { requiredInputs: ['implementation_review', 'implementation_candidate'], candidateNodes: ['integrate-candidate'], candidateKinds: ['implementation_candidate'], reworkTarget: 'classify-implementation', maxReworks: 3 }),
       end('implementation-complete', 'implementation_acceptance'), end('implementation-human', 'human_decision_pending')
     ],
     edges: [
       edge('classify-implementation', 'implementation-readiness', 'feature'),
       edge('classify-implementation', 'defect-diagnosis', 'defect'), edge('defect-diagnosis', 'defect-red-check'), edge('defect-red-check', 'implementation-readiness'),
       edge('implementation-readiness', 'readiness-gate'), edge('readiness-gate', 'implementation-plan', 'proceed'), edge('readiness-gate', 'implementation-human', 'human'),
-      edge('implementation-plan', 'backend'), edge('implementation-plan', 'frontend'),
-      edge('backend', 'implementation-ready'), edge('frontend', 'implementation-ready'),
-      edge('implementation-ready', 'independent-implementation-review'),
+      edge('implementation-plan', 'implementation-shape'),
+      edge('implementation-shape', 'backend', ['backend', 'parallel']), edge('implementation-shape', 'frontend', ['frontend', 'parallel']), edge('implementation-shape', 'fullstack', 'fullstack'),
+      edge('backend', 'implementation-ready'), edge('frontend', 'implementation-ready'), edge('fullstack', 'implementation-ready'),
+      edge('implementation-ready', 'integrate-candidate'), edge('integrate-candidate', 'independent-implementation-review'),
       edge('independent-implementation-review', 'cpo-alignment'), edge('independent-implementation-review', 'cto-alignment'),
       edge('cpo-alignment', 'alignment-ready'), edge('cto-alignment', 'alignment-ready'), edge('alignment-ready', 'implementation-gate'),
       edge('implementation-gate', 'implementation-complete', 'accept'), edge('implementation-gate', 'implementation-human', 'human')
     ]
   },
   {
-    id: 'verification', version: '0.1.1', start: 'freeze-candidate',
+    id: 'verification', version: '0.1.2', start: 'freeze-candidate', inputContracts: ['acceptance-criteria'],
     description: 'Verify one fixed candidate in parallel; rework requires a changed implementation candidate and a new verification run.',
     nodes: [
       task('freeze-candidate', 'product-owner', 'Pin the implementation candidate, requirement and decision versions for this verification run.', { requiredInputs: ['implementation_candidate', 'versioned_requirement', 'product_decision_refs'], produces: ['fixed_candidate_identity'] }),
@@ -53,13 +57,14 @@ export const engineeringGraphs = [
       task('security', 'security-engineer', 'Inspect threat model and security controls against the fixed candidate.', { produces: ['security_report'] }),
       task('regression', 'qa-engineer', 'Run regression coverage for protected product behavior against the fixed candidate.', { produces: ['regression_report'] }),
       join('verification-ready'),
-      decision('acceptance-gate', 'cpo', 'verification-acceptance', ['accept', 'rework', 'human'], { requiredInputs: ['fixed_candidate_identity', 'qa_report', 'security_report', 'regression_report'], candidateNodes: ['freeze-candidate'], candidateKinds: ['fixed_candidate_identity'] }),
+      task('acceptance-matrix', 'qa-engineer', 'Cover every input acceptance criterion exactly once, binding observed proof or an explicit unverified gap to the fixed implementation candidate.', { produces: ['acceptance_matrix'], outputContract: 'acceptance-matrix' }),
+      decision('acceptance-gate', 'cpo', 'verification-acceptance', ['accept', 'rework', 'human'], { requiredInputs: ['fixed_candidate_identity', 'qa_report', 'security_report', 'regression_report', 'acceptance_matrix'], candidateNodes: ['freeze-candidate', 'acceptance-matrix'], candidateKinds: ['fixed_candidate_identity', 'acceptance_matrix'], decisionContract: { type: 'acceptance-proof', sourceNode: 'acceptance-matrix' } }),
       end('verification-complete', 'acceptance_decision'), end('verification-rework', 'rework_required'), end('verification-human', 'human_decision_pending')
     ],
     edges: [
       edge('freeze-candidate', 'qa'), edge('freeze-candidate', 'security'), edge('freeze-candidate', 'regression'),
       edge('qa', 'verification-ready'), edge('security', 'verification-ready'), edge('regression', 'verification-ready'),
-      edge('verification-ready', 'acceptance-gate'), edge('acceptance-gate', 'verification-complete', 'accept'),
+      edge('verification-ready', 'acceptance-matrix'), edge('acceptance-matrix', 'acceptance-gate'), edge('acceptance-gate', 'verification-complete', 'accept'),
       edge('acceptance-gate', 'verification-rework', 'rework'), edge('acceptance-gate', 'verification-human', 'human')
     ]
   }

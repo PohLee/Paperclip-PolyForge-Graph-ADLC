@@ -2,7 +2,7 @@
 
 Versioned Agentic Development Life Cycle domain pack for the separate [PolyForge Graph core](../Paperclip-PolyForge-Graph). Import `pack` from `index.mjs`, register it with `GraphEngine.registerPack(pack)`, and bind its role IDs to real Paperclip agents or authenticated human operations in the host. The pack contains no agent UUIDs or installed-tool claims.
 
-Current pack version: `adlc@0.1.6`. Design is `0.1.2`, verification is `0.1.1`, and implementation is `0.1.2`; the four new lifecycle graphs are `0.1.0`. Every artifact-producing task requires an attempt-bound work Decision Record.
+Current pack version: `adlc@0.1.7`, requiring Core `0.4.0` or later. Design and verification are `0.1.2`; implementation is `0.1.3`; other graphs are `0.1.0`. Every artifact-producing task requires an attempt-bound work Decision Record. See [evidence contracts and input examples](docs/EVIDENCE_CONTRACTS.md) and [method/agent mapping](docs/FACTORY_BLUEPRINT_ADAPTATION.md).
 
 ## Included workflows
 
@@ -10,11 +10,13 @@ Current pack version: `adlc@0.1.6`. Design is `0.1.2`, verification is `0.1.1`, 
 | --- | --- | --- |
 | `product-discovery@0.1.0` | `accepted_intent` or `no_build_decision` | frame the problem, gather internal and user/external evidence, synthesize options, human CPO disposition: advance, more research, or stop |
 | `ui-ux-design@0.1.2` | `final_design_identity` | none/minor/major; major runs principle research, two wireframes, norms/PO/blind filters, one or two promoted directions, four frozen and independently checked visuals per direction, at most two finalists, optional isolated A/B prototypes, and CPO selection of exactly one current frozen finalist |
-| `implementation@0.1.2` | `implementation_acceptance` | classify feature/defect; defects require root-cause evidence and a failing check; readiness gate; plan, backend and frontend parallel work, ALL join, independent review, CTO + CAIO gate; rejection restarts classification, up to three times before human intervention |
-| `verification@0.1.1` | `acceptance_decision` | pin one candidate, parallel QA/security/regression, ALL join, CPO acceptance |
+| `implementation@0.1.3` | `implementation_acceptance` | architecture context; feature/defect classification and readiness; plan; select backend/frontend/fullstack/parallel; ALL join of active branches; integrated candidate; independent review; CTO gate with bounded rework |
+| `verification@0.1.2` | `acceptance_decision` | pin one candidate and criterion list, parallel QA/security/regression, ALL join, criterion proof matrix, CPO acceptance or human exception for unverified gaps |
 | `release-process@0.1.0` | `ready_for_host_execution` or `release_held` | pin the verified candidate; plan, preflight and coordinate; a named human records operational start or hold |
 | `release-observation@0.1.0` | `release_recorded`, `recovery_pending`, or `incident_handoff` | start only from a host-supplied execution event and linked plan/authorization; run smoke and health checks; human outcome decision |
 | `production-monitoring@0.1.0` | `healthy_observation`, `watch_scheduled`, `incident_handoff`, or `health_unverified` | evaluate one sourced observation window against a versioned monitoring plan and route the evidence |
+| `system-architecture@0.1.0` | `architecture_acceptance` | optional baseline with diagram, stable invariant IDs, enforcement/proof and separate implementation status; CTO acceptance/rework |
+| `code-delivery@0.1.0` | `code_delivery_ready`, `code_merge_observed`, `code_delivery_held` | optional final PR-head checks, review, approvals and merge event; no merge or production action |
 
 Design and implementation use bounded `reworkTarget` resets that keep prior attempts and decisions. Verification `rework_required` is a distinct terminal status that hands work back for a changed candidate and new verification run. Old reports remain attached to the version they actually assessed. Human escalation pauses a run.
 
@@ -27,7 +29,7 @@ await engine.startRun({ packId: pack.id, packVersion: pack.version,
   graphId: 'implementation', mode: 'assisted', input, actor });
 ```
 
-The host must supply trusted actor identity, role bindings, execution identity, available capabilities, and versioned artifacts. The `roles` map contains each role's five Markdown documents and SHA-256 digests. `decisionRules` are parsed from the fenced JSON in the role `decision_model.md` files at import time. Eighteen bundled Markdown skills are carried in `pack.skills`; each role lists the skill IDs it uses. The host provides their content to the runtime and resolves capability requirements to real tools. A supervisor review uses an execution identity distinct from the author. For human gates, the authenticated human needs `human-owner` plus the gate's domain role, such as `cpo` or `cto-caio`, in the trusted actor context.
+The host supplies trusted actor identity, role bindings, execution identity, available capabilities, and versioned artifacts. The `roles` map contains five Markdown documents per role and SHA-256 digests. `decisionRules` are parsed from role decision models. Twenty-one bundled skills are carried in `pack.skills`; each role lists the skills it uses. The host provides them to the runtime and resolves real capabilities. Supervisor review uses a distinct execution identity. Normal human gates need `human-owner` plus the gate's domain role; resolving an escalated human gate requires authenticated `human-owner` authority.
 
 Discovery starts from a sourced request without an approved product decision. An `advance` decision accepts the versioned intent for requirements definition; before the existing design or implementation graphs start, the host must record the approved product decision and pass exact requirement and design identities. The release process graph stops at `ready_for_host_execution`. The host then performs the release with its actual procedure and starts release observation only after supplying the execution event, plan identity, authorization decision and candidate identity. The pack does not select a pipeline, execute production changes, or provide full release certification. Before production monitoring starts, the host supplies a versioned monitoring plan with service owner, signal definitions, sources, thresholds, freshness and action owner. The graph evaluates one supplied window; telemetry ingestion, scheduling, paging and recovery execution remain host capabilities.
 

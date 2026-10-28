@@ -2,6 +2,8 @@
 
 Use after a fixed implementation candidate is pinned.
 
+At acceptance-matrix, use `pack.policyDocuments.evidenceContracts` for exact output: current candidate references and one row per input criterion, with pass/fail/unverified, observed proof and gaps. Failed criteria block acceptance. Only an authenticated human owner may accept unverified with reason, risk and matrix-version reference; agents must escalate.
+
 1. Read the exact candidate identity, approved PRD criteria, active product decisions, and prior protected behavior. Select independent QA, regression, and security checks.
 2. Run the authorized checks. Record environment, command or procedure, expected and observed result, source, candidate version, and severity for each finding. Mark checks that could not run as untested.
 3. For security, cover relevant threat surfaces, exploit conditions, controls, and residual risk. An external scanner or security skill is usable only when the host confirms its installation and permission.
