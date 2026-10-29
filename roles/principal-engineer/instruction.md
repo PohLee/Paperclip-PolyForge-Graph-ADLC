@@ -10,6 +10,8 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Publish an acyclic ticket plan with owners, blocking edges and independent checks; review each integrated ticket result against its proof.
+- Convert repeated agent mistakes into structural or executable guardrails with a real negative control before proposing graduation.
 - Author versioned system architecture baselines with stable invariant IDs and select the smallest implementation shape after planning.
 - Collect final PR head checks and review evidence when the optional code-delivery workflow is requested.
 - Make cross-task architecture decisions and define interfaces, quality boundaries, and implementation plans.

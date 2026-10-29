@@ -1,0 +1,33 @@
+// Discovery metadata is deliberately shorter than the skill body. The body is
+// loaded only after a task matches the trigger and exclusion boundary.
+const entry = (description, triggers, nonTriggers, inputs, outputs) => ({
+  description, triggers, nonTriggers, inputs, outputs,
+});
+
+export const skillCatalog = {
+  'request-triage': entry('Check and route a new issue, external PR or feedback item with a durable disposition.', ['new request or reporter follow-up'], ['production signal already in monitoring'], ['source request', 'history'], ['triage report and disposition']),
+  'ticket-planning': entry('Split accepted implementation work into a dependency graph of verifiable tickets.', ['implementation planning across slices'], ['single already bounded coding task'], ['accepted requirement', 'readiness'], ['work plan and completion evidence']),
+  'application-verification': entry('Create and use a project-local recipe to prove user behavior on the real application.', ['application QA or regression proof'], ['static-only review'], ['candidate', 'application environment'], ['feature map and observed proof']),
+  'correction-guardrails': entry('Turn a repeated agent error into an enforced and negatively tested guardrail.', ['repeated human intervention class'], ['one-off preference'], ['intervention records', 'past failure'], ['enforcement proof and improvement disposition']),
+  'product-memory': entry('Apply approved feature decisions when work may affect product behavior.', ['feature-scoped planning or changes'], ['unrelated technical maintenance'], ['feature', 'active decisions'], ['decision references']),
+  'design-evaluation': entry('Compare product designs against accepted intent and evidence.', ['design review or selection'], ['code-only verification'], ['design candidates', 'accepted intent'], ['evaluation findings']),
+  'conflict-resolution': entry('Resolve recorded CPO and CTO disagreements with an explicit human disposition.', ['unresolved product and engineering conflict'], ['routine review feedback'], ['both positions', 'evidence'], ['resolution decision']),
+  'versioned-evidence': entry('Pin artifact versions and source evidence for Graph decisions.', ['artifact submission or decision'], ['informal exploration without a Graph decision'], ['artifact identity', 'source references'], ['versioned evidence']),
+  'product-direction': entry('Decide product direction from sourced opportunity and risk evidence.', ['portfolio or product direction choice'], ['implementation detail'], ['opportunity evidence'], ['direction decision']),
+  'lifecycle-orchestration': entry('Select the ADLC entry path and advance work through its authorized gates.', ['start or route lifecycle work'], ['single isolated coding step'], ['source request', 'current state'], ['selected graph route']),
+  'product-discovery': entry('Investigate an uncertain product need before committing to a build.', ['new idea or uncertain user need'], ['accepted requirement ready for implementation'], ['source request', 'research evidence'], ['discovery disposition']),
+  'research-brief': entry('Produce a sourced research brief for a product decision.', ['research question needs evidence'], ['unsourced opinion request'], ['question', 'source material'], ['research brief']),
+  'requirements-discovery': entry('Clarify, challenge, and record testable product requirements.', ['ambiguous or changing requirements'], ['fully accepted specification'], ['stakeholder intent', 'constraints'], ['versioned requirement']),
+  'product-definition': entry('Define a product slice and its acceptance criteria.', ['scope and acceptance definition'], ['implementation already authorized and unchanged'], ['accepted intent', 'constraints'], ['product specification']),
+  'review-handoff': entry('Self-review and independently review a versioned artifact before acceptance.', ['artifact review or supervisor handoff'], ['unreviewed exploratory note'], ['candidate artifact', 'requirements', 'test evidence'], ['review disposition']),
+  'design-delivery': entry('Deliver a selected design with identity and implementation handoff.', ['approved design delivery'], ['early design exploration'], ['selected design', 'product constraints'], ['design handoff']),
+  'engineering-delivery': entry('Plan and deliver an implementation candidate against accepted requirements.', ['engineering implementation'], ['discovery without build authorization'], ['requirement', 'architecture baseline'], ['candidate and verification']),
+  'development-loop': entry('Implement a small working change and run relevant checks.', ['coding or refactoring task'], ['product strategy decision'], ['implementation plan', 'repository'], ['tested change']),
+  'systematic-debugging': entry('Find a defect root cause using reproduction and a failing check.', ['reported defect or regression'], ['new feature without failure'], ['symptom', 'reproduction'], ['root cause and regression check']),
+  'release-process': entry('Prepare and record the human-controlled release process.', ['release planning or start decision'], ['pipeline certification or automatic production action'], ['accepted candidate', 'release plan'], ['authorized release disposition']),
+  'production-monitoring': entry('Assess a sourced production observation window against its monitoring plan.', ['post-release or production signal review'], ['missing telemetry treated as health'], ['monitoring plan', 'signal snapshot'], ['health assessment']),
+  'verification-review': entry('Check candidate evidence against acceptance criteria and identify gaps.', ['QA, security, or acceptance verification'], ['author self-approval'], ['candidate', 'acceptance criteria', 'test results'], ['verification findings']),
+  'architecture-baseline': entry('Record accepted system boundaries and invariant IDs before implementation.', ['architecture proposal or material change'], ['local code change within accepted boundaries'], ['system context', 'constraints'], ['architecture baseline']),
+  'code-delivery': entry('Observe a pinned PR head and its checks for an optional delivery decision.', ['PR delivery evidence'], ['production deployment'], ['PR head', 'checks', 'review'], ['delivery report']),
+  'check-execution': entry('Run host-selected checks with bounded attempts and recorded feedback.', ['configured implementation checks'], ['agent-selected arbitrary executable'], ['host check configuration'], ['check manifest']),
+};

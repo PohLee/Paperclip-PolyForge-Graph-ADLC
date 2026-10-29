@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GraphEngine } from '../../Paperclip-PolyForge-Graph/src/core/index.mjs';
+import { GraphEngine, readyWorkTickets } from '../../Paperclip-PolyForge-Graph/src/core/index.mjs';
 import { pack } from '../index.mjs';
 import { roleCatalog, roleResponsibilities } from '../roles/catalog.mjs';
 
@@ -8,11 +8,11 @@ test('published pack registers with the core validator and has the lifecycle inv
   const engine = new GraphEngine();
   await engine.registerPack(pack);
   assert.deepEqual(pack.graphs.map(graph => graph.id), [
-    'product-discovery', 'ui-ux-design', 'implementation', 'verification',
+    'request-triage', 'product-discovery', 'ui-ux-design', 'implementation', 'verification',
     'release-process', 'release-observation', 'production-monitoring', 'system-architecture', 'code-delivery'
   ]);
   assert.equal(Object.keys(pack.roles).length, 11);
-  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 9);
+  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 10);
 });
 
 test('every task role and supervisor maps to a documented blueprint', () => {
@@ -56,7 +56,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.1.7');
+  assert.equal(pack.version, '0.1.9');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === null).length, 2);
@@ -66,7 +66,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
     assert.match(role.documents.instruction, /organizational reporting line.*Graph node/s);
   }
-  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.2', '0.1.3', '0.1.2', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
+  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.4', '0.1.3', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
   assert.equal(pack.policies.cpoCtoConflict.protocolVersion, 2);
 });
 
@@ -164,7 +164,7 @@ async function playGraph(graphId, routes, expectedStatus) {
     ...(graphId === 'verification' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, acceptance_criteria: [{ id: 'AC-1', description: 'Expected behavior works', requirementIds: ['REQ-1'] }] } : {}),
     ...(graphId === 'system-architecture' ? { system_id: 'orders', architecture_brief: 'Pin the order API boundaries' } : {}),
     ...(graphId === 'code-delivery' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, delivery_target: { repository: 'owner/repo', prUrl: 'https://github.com/owner/repo/pull/1', headSha: 'a'.repeat(40) }, required_checks: ['test'], required_approvals: 1 } : {}),
-    ...(graphId === 'product-discovery' ? { source_request: { id: 'IDEA-1', version: 'v1' } } : {}),
+    ...(['product-discovery', 'request-triage'].includes(graphId) ? { source_request: { id: 'IDEA-1', version: 'v1' } } : {}),
     ...(graphId === 'release-process' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, verification_decision: { id: 'ACCEPT-1', version: 'v1' } } : {}),
     ...(graphId === 'release-observation' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, release_execution_event: { id: 'EXEC-1', version: 'v1' }, release_plan_identity: { id: 'PLAN-1', version: 'v1' }, release_authorization_decision: { id: 'START-1', version: 'v1' } } : {}),
     ...(graphId === 'production-monitoring' ? { service_identity: { id: 'SERVICE-1', version: 'v1' }, monitoring_plan_identity: { id: 'MON-PLAN-1', version: 'v1' }, observation_window: { start: '2026-10-28T00:00:00Z', end: '2026-10-28T01:00:00Z' }, signal_snapshot: { id: 'SIGNAL-1', version: 'v1' } } : {}) };
@@ -209,6 +209,19 @@ async function playGraph(graphId, routes, expectedStatus) {
           version: current.nodeStates[id].artifacts[0].version })) : null;
       const contractOutput = node.outputContract === 'acceptance-matrix'
         ? { candidateRefs: [{ artifactId: 'CODE-1', version: 'v1' }], criteria: [{ id: 'AC-1', result: 'pass', evidence: [{ kind: 'report', ref: 'artifact://qa', observed: 'Scenario passed' }] }] }
+        : node.outputContract === 'triage-report'
+        ? { requestRefs: [{ artifactId: 'IDEA-1', version: 'v1' }], category: 'enhancement', surface: 'issue',
+          disposition: routes['triage-disposition'], duplicateCheck: { result: 'none', sourceRef: 'artifact://search/duplicates' },
+          priorDecisionCheck: { result: 'none', sourceRef: 'artifact://product/decisions' },
+          claimCheck: { result: 'not-applicable', sourceRef: 'artifact://request/idea-1' },
+          ...(routes['triage-disposition'] === 'ready' ? { brief: { problem: 'User need', acceptanceBoundary: 'Observable result', evidenceRef: 'artifact://brief/1', owner: 'product-owner', nextGraph: 'product-discovery' } } : {}),
+          ...(routes['triage-disposition'] === 'needs-info' ? { questions: ['Which user is affected?'] } : {}),
+          ...(routes['triage-disposition'] === 'closed' ? { reason: 'Already addressed' } : {}) }
+        : node.outputContract === 'work-plan'
+        ? { tickets: [{ id: 'T-1', deliverable: 'Scenario outcome', owner: 'lead-engineer', verification: 'Run scenario check', blockers: [] }] }
+        : node.outputContract === 'work-completion'
+        ? { candidateRefs: [{ artifactId: artifacts.find(item => item.kind === 'implementation_candidate').id, version: 'v1' }],
+          tickets: [{ id: 'T-1', result: 'complete', evidenceRef: 'artifact://checks/scenario', observed: 'Scenario passed' }] }
         : node.outputContract === 'architecture-baseline'
         ? { systemId: 'orders', summary: 'Order API boundary', diagram: 'API -> database', implementationStatus: 'proposed', invariants: [{ id: 'INV-001', rule: 'Only API writes', enforcement: 'Credentials', proof: 'ACL test', status: 'active' }] }
         : node.outputContract === 'delivery-report'
@@ -301,6 +314,16 @@ test('method skills and provenance are included in the runtime pack', () => {
   assert.equal(pack.policies.lifecycle.readiness, 'pass-concerns-fail-with-explicit-gaps');
 });
 
+test('every discoverable skill has a bounded task description and input/output contract', () => {
+  for (const skill of Object.values(pack.skills)) {
+    assert.ok(skill.description.length > 25 && skill.description.length < 180, skill.id);
+    for (const field of ['triggers', 'nonTriggers', 'inputs', 'outputs']) {
+      assert.ok(Array.isArray(skill[field]) && skill[field].length, `${skill.id}.${field}`);
+    }
+  }
+  assert.match(pack.skills['release-process'].nonTriggers.join(' '), /certification/);
+});
+
 test('defect route requires root-cause report and red check before readiness and planning', async () => {
   const run = await playGraph('implementation', {
     'classify-implementation': 'defect', 'readiness-gate': 'proceed', 'implementation-gate': 'accept'
@@ -346,6 +369,25 @@ test('discovery can advance, stop, or request more evidence before any build pat
   assert.equal(repeated.nodeStates['frame-discovery'].attempts.length, 2);
   assert.equal(repeated.nodeStates['discovery-gate'].attempts.length, 2);
   assert.equal(pack.decisionRules.find(rule => rule.type === 'discovery-disposition' && rule.mode === 'autonomous').requiresHuman, true);
+});
+
+test('request triage preserves ready, needs-info and closed outcomes', async () => {
+  for (const [outcome, end] of [['ready', 'triage-ready'], ['needs-info', 'triage-needs-info'], ['closed', 'triage-closed']]) {
+    const run = await playGraph('request-triage', { 'triage-disposition': outcome }, 'completed');
+    assert.equal(run.nodeStates[end].status, 'completed');
+    assert.equal(run.nodeStates['assess-request'].output.disposition, outcome);
+  }
+});
+
+test('ticket frontier follows declared blockers', () => {
+  const plan = { tickets: [
+    { id: 'T-1', deliverable: 'First behavior', owner: 'lead-engineer', verification: 'Run first journey', blockers: [] },
+    { id: 'T-2', deliverable: 'Second behavior', owner: 'lead-engineer', verification: 'Run second journey', blockers: ['T-1'] }
+  ] };
+  assert.deepEqual(readyWorkTickets(plan), ['T-1']);
+  assert.deepEqual(readyWorkTickets(plan, ['T-1']), ['T-2']);
+  assert.deepEqual(readyWorkTickets(plan, ['T-1', 'T-2']), []);
+  assert.throws(() => readyWorkTickets({ tickets: [{ ...plan.tickets[0], blockers: ['T-2'] }, plan.tickets[1]] }), /cycle/);
 });
 
 test('release preparation stops at host execution and cannot assume a pipeline', async () => {

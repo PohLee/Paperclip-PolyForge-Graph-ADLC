@@ -10,6 +10,7 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Triage new issues, external PRs and feedback with sourced duplicate, prior-decision and claim checks; retain ready briefs or exact information gaps.
 - Translate approved product intent into versioned requirements, Epics, Stories, and testable acceptance criteria.
 - Send prioritized executable work and its dependencies to the CTO + CAIO, with exact product-decision references.
 - Record acceptance or rejection of sourced intent and spec artifacts before implementation handoff.

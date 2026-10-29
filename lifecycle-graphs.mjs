@@ -10,7 +10,26 @@ const edge = (from, to, when) => when === undefined ? { from, to } : { from, to,
 
 export const lifecycleGraphs = [
   {
-    id: 'product-discovery', version: '0.1.0', start: 'frame-discovery',
+    id: 'request-triage', version: '0.1.0', start: 'assess-request', inputContracts: ['source-request'],
+    description: 'Check an issue, external PR or feedback claim before routing it to discovery or implementation; preserve the brief or information gap.',
+    nodes: [
+      task('assess-request', 'product-owner', 'cpo',
+        'Check duplicates, already implemented behavior, prior rejection, and the reported claim. For a bug, reproduce before declaring it ready. Record a durable brief, precise questions or closure reason.',
+        ['triage_report'], { requiredInputs: ['source_request'], outputContract: 'triage-report' }),
+      decision('triage-disposition', 'product-owner', 'request-triage', ['ready', 'needs-info', 'closed'], {
+        requiredInputs: ['triage_report'], candidateNodes: ['assess-request'], candidateKinds: ['triage_report'],
+        decisionContract: { type: 'triage-routing', sourceNode: 'assess-request' }
+      }),
+      end('triage-ready', 'request_ready'), end('triage-needs-info', 'request_needs_info'),
+      end('triage-closed', 'request_closed')
+    ],
+    edges: [
+      edge('assess-request', 'triage-disposition'), edge('triage-disposition', 'triage-ready', 'ready'),
+      edge('triage-disposition', 'triage-needs-info', 'needs-info'), edge('triage-disposition', 'triage-closed', 'closed')
+    ]
+  },
+  {
+    id: 'product-discovery', version: '0.1.1', start: 'frame-discovery', inputContracts: ['triage-handoff-optional'],
     description: 'Investigate the problem and user need before a build commitment; retain an explicit advance, research-more, or no-build disposition.',
     nodes: [
       task('frame-discovery', 'product-owner', 'cpo',

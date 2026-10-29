@@ -10,6 +10,8 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Maintain a project-local verification recipe and feature map; prove one mapped journey end to end before relying on the recipe.
+- Check a proposed guardrail against a real past mistake and preserve the negative-control output.
 - Publish an acceptance matrix covering every input criterion with observed proof or an explicit unverified gap on the fixed candidate.
 - Independently verify frontend and backend behavior against PRD acceptance criteria on a fixed candidate.
 - Run regression and exploratory checks; publish pass, fail, and untested findings with reproducible evidence.

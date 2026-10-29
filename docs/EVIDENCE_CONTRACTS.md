@@ -1,6 +1,50 @@
-# Evidence contracts — ADLC 0.1.7
+# Evidence contracts — ADLC 0.1.9
 
-Requires Core 0.4.0+. The core validates submitted coverage and identity. The host authenticates actors, executes checks and verifies external sources. Schema validity cannot establish that a command ran or a remote PR is still current. Fetch this full pinned policy document when dispatch context is truncated.
+Requires Core 0.6.0+. The core validates submitted coverage and identity. The host authenticates actors, executes checks and verifies external sources. Schema validity cannot establish that a command ran or a remote PR is still current. Fetch this full pinned policy document when dispatch context is truncated.
+
+## Request triage
+
+`request-triage` starts from `source_request: {id, version}`. A follow-up after `needs-info` also supplies `previous_triage: {id, version}` and `reporter_update: {id, version}`. Core requires the previous report and decision to have ended in `needs-info` for the same request ID. The host verifies that the update came from the reporter or another trusted source.
+
+`assess-request` submits one `triage_report` artifact and output:
+
+```json
+{"requestRefs":[{"artifactId":"ISSUE-1","version":"v1"}],"category":"bug","surface":"issue","disposition":"ready","duplicateCheck":{"result":"none","sourceRef":"artifact://search/1"},"priorDecisionCheck":{"result":"none","sourceRef":"artifact://decisions/1"},"claimCheck":{"result":"confirmed","sourceRef":"artifact://repro/1"},"brief":{"problem":"Saving fails","acceptanceBoundary":"A saved draft is visible after reload","evidenceRef":"artifact://repro/1","owner":"product-owner","nextGraph":"implementation"}}
+```
+
+Category is `bug` or `enhancement`; surface is `issue`, `external-pr`, or `feedback`. Duplicate result is `none`, `duplicate`, or `already-implemented`; prior decision is `none` or `rejected`. Claim result is `confirmed`, `unverified`, or `not-applicable`. A ready bug needs confirmed reproduction; duplicates and rejected requests cannot be ready. `needs-info` requires a nonempty `questions` list; `closed` requires `reason`. The disposition decision must match the report. Tracker labels, reporter notifications and source authenticity remain host responsibilities.
+
+The optional `triage_handoff: {id, version}` input to `product-discovery` or `implementation` must name an actual `ready` triage report whose brief selects that Graph. Direct requests without triage keep their existing entry path. The host carries the brief and source material into the next run; Core checks the recorded route, not the truth of external sources.
+
+## Ticket plan and integrated completion
+
+The `implementation-plan` task submits one `implementation_plan` artifact and output containing an acyclic ticket graph:
+
+```json
+{"tickets":[{"id":"T-1","deliverable":"A draft can be saved","owner":"lead-engineer","verification":"Run save and reload journey","blockers":[]},{"id":"T-2","deliverable":"A draft can be edited","owner":"lead-engineer","verification":"Run edit journey","blockers":["T-1"]}]}
+```
+
+Core checks unique ticket IDs, known blockers, no self-blockers and no cycles. `readyWorkTickets(plan, completedIds)` returns the ready frontier. The host or tracker records completed IDs and verifies that each completed ticket really met its criterion. At `integrate-candidate`, submit the integrated `implementation_candidate`, one `integration_test_report` artifact, and output:
+
+```json
+{"candidateRefs":[{"artifactId":"CODE-1","version":"v1"}],"tickets":[{"id":"T-1","result":"complete","evidenceRef":"artifact://checks/save","observed":"Save and reload passed"},{"id":"T-2","result":"complete","evidenceRef":"artifact://checks/edit","observed":"Edit passed"}]}
+```
+
+Every planned ticket appears exactly once with observed proof; the candidate references must match the submitted candidate. Core validates shape and coverage. The host checks actual evidence, tracker status, and whether each ticket is a meaningful independently verifiable slice.
+
+## Project-local application verification
+
+When a real application surface needs repeatable QA, the host supplies `project_verification` to the verification Graph. It is optional so library-only or static checks can use the existing acceptance matrix. The profile points to a project-local recipe and one completed proof run:
+
+```json
+{"identity":{"id":"VERIFY-APP","version":"v1"},"surface":"web app","launchRef":"artifact://verify/launch","doctorRef":"artifact://verify/doctor","driveRef":"artifact://verify/drive","evidenceRef":"artifact://verify/evidence","cleanupRef":"artifact://verify/cleanup","features":[{"id":"save-draft","path":"Open editor and save","proof":"Draft persists after reload"}],"proofRun":{"featureId":"save-draft","evidenceRef":"artifact://verify/proof-1","cleanupPreservedEvidence":true}}
+```
+
+Core checks the profile structure, feature IDs, proof-run mapping, and evidence-retention flag. The host executes and authenticates Launch, Doctor, Drive, Evidence and Cleanup; a declared proof run is not proof by itself. QA binds actual candidate-specific observations to acceptance matrix rows. An unavailable or stale profile leaves affected checks unverified.
+
+## Correction guardrail graduation
+
+An `intervention_improvement` may become `graduated` only when its proposal references at least two distinct recorded interventions. The graduation evidence needs an `enforcement_proof` with `level` (`architecture`, `type`, `lint`, `check`, or `test`), `mechanism`, and `sourceRef`; a `negative_control` with `command`, `observedFailure`, and `sourceRef`; plus the outcome signal. Core validates these fields and the human-owner actor. The host must confirm the negative control replays a real past mistake, the guard actually failed on it, and the corrected path passes. Reopen or retire remains a separate recorded human decision.
 
 ## Verification
 

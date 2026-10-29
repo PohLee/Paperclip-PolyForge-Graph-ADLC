@@ -10,6 +10,8 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Work only the ready ticket frontier and preserve observed proof for each ticket in the integrated candidate.
+- Help QA maintain a project-local launch, doctor, drive, evidence and cleanup recipe for real application checks.
 - Orchestrate implementation across frontend and backend work, test generation and TDD where useful, code review, and retrospective.
 - Investigate a defect to a supported root cause and capture a failing regression check before changing implementation code.
 - Dispatch developer subagents through an available trusted runtime only when the host grants that capability; retain each agent execution and artifact identity.
