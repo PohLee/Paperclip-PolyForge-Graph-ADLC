@@ -32,6 +32,16 @@ Marketing outcome review requires metric source, definition, observation window,
 | Core artifact | ADLC 0.2.0 | ADLC 0.2.1 | Marketing 0.0.1 | Evidence |
 | --- | --- | --- | --- | --- |
 | Core 0.8.0 local candidate | Passed pinned artifact tests | Incompatible by declared range | Passed pinned artifact tests | Prior 31/31 Pack test report retained |
-| Core 0.8.1 local candidate | Within prior declared range | Target of this candidate | Within declared range | Pin and test the exact Core source artifact before activation |
+| Core 0.8.1 local candidate | Within prior declared range | Passed pinned artifact tests | Passed pinned artifact tests | 33/33 Pack tests; see exact snapshot below |
+
+The 2026-10-30 test used fixed Core 0.8.1 contract snapshot
+`sha256:2256bfc6ece4b536dad2a6a2c91c2ba026b01836829ac0221baa41941ffe15cf`
+(`src/core/` plus `src/plugin/review-context.mjs`, not the complete plugin).
+The real Docker host also verified automatic and same-Agent Shadows, worker
+restart recovery, full-host interruption without a replacement execution, and
+stop intent preventing acceptance. Verification used deterministic process
+Agents; no paid model was called. GPT-6 Sol / High independent Standards and
+Spec reviewers verified the stop-race repair with no remaining P0/P1. See the
+[Core acceptance record](../Paperclip-PolyForge-Graph/docs/shadow-runtime-2026-10-30.md).
 
 The earlier 0.8.0 test used local Core artifact `sha256:6241292cc678ef7c877fbc3578d298f399a399090e43d12f6671d03dafcf4dad`, ADLC 0.2.0 payload `sha256:d138a969666124fc0da62c2750aa75f3fc019124bb95725fae9c3498c7a27e12`, and Marketing 0.0.1 payload `sha256:d5dac8b69b1983c0ae94e92d142523db90746e6b1299478827afe87ec20ac260`. ADLC 0.2.1 candidate payload is `sha256:82948420027ec8ba6d6e3410248b6a90348761c81b52630047f8fac90f856fb5`. Existing active runs keep their pinned 0.2.0 snapshot; registration of 0.2.1 does not change them. `docs/COMPATIBILITY.md` describes the artifact gate. Core company control, cross-Pack plans and handoffs remain required for the Pack. The Shadow execution capability is required only for the verification Graph; sourced metrics, verified release events and Dashboard read models remain gated at their affected routes.
