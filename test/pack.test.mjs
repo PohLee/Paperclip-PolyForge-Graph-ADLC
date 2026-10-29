@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GraphEngine, readyWorkTickets } from '../../Paperclip-PolyForge-Graph/src/core/index.mjs';
+import { reviewPacket } from '../../Paperclip-PolyForge-Graph/src/plugin/review-context.mjs';
 import { pack } from '../index.mjs';
 import { roleCatalog, roleResponsibilities } from '../roles/catalog.mjs';
 
@@ -9,10 +10,11 @@ test('published pack registers with the core validator and has the lifecycle inv
   await engine.registerPack(pack);
   assert.deepEqual(pack.graphs.map(graph => graph.id), [
     'request-triage', 'product-discovery', 'ui-ux-design', 'implementation', 'verification',
-    'release-process', 'release-observation', 'production-monitoring', 'system-architecture', 'code-delivery'
+    'release-process', 'release-observation', 'production-monitoring', 'system-architecture', 'code-delivery',
+    'technical-design', 'design-drift'
   ]);
   assert.equal(Object.keys(pack.roles).length, 11);
-  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 10);
+  assert.equal(new Set(pack.graphs.map(graph => `${graph.id}@${graph.version}`)).size, 12);
 });
 
 test('every task role and supervisor maps to a documented blueprint', () => {
@@ -56,7 +58,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.1.9');
+  assert.equal(pack.version, '0.1.10');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === null).length, 2);
@@ -66,7 +68,7 @@ test('organization has two Board roots and nine specified reporting edges withou
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
     assert.match(role.documents.instruction, /organizational reporting line.*Graph node/s);
   }
-  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.4', '0.1.3', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
+  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.5', '0.1.3', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
   assert.equal(pack.policies.cpoCtoConflict.protocolVersion, 2);
 });
 
@@ -153,9 +155,9 @@ test('no-change design decision routes to preserving the existing design identit
   assert.equal((await engine.listDecisions({ runId: run.id })).at(-1).outcome, 'none');
 });
 
-async function playGraph(graphId, routes, expectedStatus) {
-  const engine = new GraphEngine();
-  await engine.registerPack(pack);
+async function playGraph(graphId, routes, expectedStatus, options = {}) {
+  const engine = options.engine ?? new GraphEngine();
+  if (!options.engine) await engine.registerPack(pack);
   const starter = { kind: 'human', id: 'owner', roles: ['human-owner'] };
   const feature = `scenario-${graphId}`;
   const baseline = await engine.recordProductDecision({ feature, actor: starter, status: 'approved', outcome: 'Use scenario baseline', reason: 'Scenario has an approved starting product decision', evidence: [{ kind: 'requirement', id: 'REQ-1' }] });
@@ -164,6 +166,7 @@ async function playGraph(graphId, routes, expectedStatus) {
     ...(graphId === 'verification' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, acceptance_criteria: [{ id: 'AC-1', description: 'Expected behavior works', requirementIds: ['REQ-1'] }] } : {}),
     ...(graphId === 'system-architecture' ? { system_id: 'orders', architecture_brief: 'Pin the order API boundaries' } : {}),
     ...(graphId === 'code-delivery' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, delivery_target: { repository: 'owner/repo', prUrl: 'https://github.com/owner/repo/pull/1', headSha: 'a'.repeat(40) }, required_checks: ['test'], required_approvals: 1 } : {}),
+    ...(graphId === 'design-drift' ? options.input : {}),
     ...(['product-discovery', 'request-triage'].includes(graphId) ? { source_request: { id: 'IDEA-1', version: 'v1' } } : {}),
     ...(graphId === 'release-process' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, verification_decision: { id: 'ACCEPT-1', version: 'v1' } } : {}),
     ...(graphId === 'release-observation' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, release_execution_event: { id: 'EXEC-1', version: 'v1' }, release_plan_identity: { id: 'PLAN-1', version: 'v1' }, release_authorization_decision: { id: 'START-1', version: 'v1' } } : {}),
@@ -175,6 +178,7 @@ async function playGraph(graphId, routes, expectedStatus) {
     const current = await engine.getRun(run.id);
     if (current.status !== 'running') {
       assert.equal(current.status, expectedStatus);
+      current._engine = engine;
       return current;
     }
     const ready = await engine.getReadyNodes(run.id);
@@ -230,6 +234,24 @@ async function playGraph(graphId, routes, expectedStatus) {
           approvals: [{ actorId: 'reviewer', headSha: input.delivery_target.headSha, sourceRef: 'https://pr/review/1' }],
           review: { headSha: input.delivery_target.headSha, sourceRef: 'artifact://review/1', verdict: 'approve' }, unresolvedFindings: 0, mergeable: true,
           ...(routes['delivery-gate'] === 'merged' ? { mergeEvent: { headSha: input.delivery_target.headSha, mergeSha: 'b'.repeat(40), sourceRef: 'https://pr/merge/1' } } : {}) }
+        : node.outputContract === 'technical-design'
+        ? { requirementRefs: [{ artifactId: 'REQ-1', version: 'v1' }], problem: 'Avoid inconsistent writes', scope: 'Order API',
+          approach: 'Single writer', rollback: 'Restore old route', alternatives: [{ name: 'Dual writer', reason: 'Races' }],
+          boundaries: [{ path: 'src/order.mjs', responsibility: 'Own writes' }],
+          failureModes: [{ scenario: 'Store unavailable', handling: 'Retry safely' }],
+          verification: [{ claim: 'Single writer', check: 'ACL test' }],
+          contextIndex: [{ path: 'src/order.mjs', purpose: 'Inspect write boundary' }] }
+        : node.outputContract === 'design-comprehension'
+        ? { designRefs: [{ artifactId: current.nodeStates['draft-technical-design'].artifacts[0].id, version: 'v1' }],
+          paraphrase: 'Order API owns all writes', sessionRef: 'host-session://fresh-1', readPaths: ['src/order.mjs'], gaps: [] }
+        : node.outputContract === 'design-audit'
+        ? { designRefs: [{ artifactId: current.nodeStates['draft-technical-design'].artifacts[0].id, version: 'v1' }],
+          axes: ['zoom-out-reuse', 'comprehension', 'failure-modes', 'implementation-feasibility'].map(axis =>
+            ({ axis, verdict: 'pass', evidenceRef: `artifact://review/${axis}` })), findings: [] }
+        : node.outputContract === 'design-drift-report'
+        ? { designRefs: [{ artifactId: input.technical_design_context.design.artifactId, version: 'v1' }],
+          codeSha: input.code_sha, rows: [{ id: 'DRIFT-1', designClaim: 'Single writer', codeRef: 'src/order.mjs:1',
+            observed: 'Order API writes', evidenceRef: 'artifact://inspection/1', status: 'matched' }] }
         : {};
       await engine.submitNode({ runId: run.id, nodeId: node.id, actor,
         output: { result: node.id, ...(selectedFinalists ? { selectedFinalists } : {}), ...contractOutput }, artifacts,
@@ -292,6 +314,25 @@ test('implementation rejection restarts classification and planning before succe
   assert.equal(run.nodeStates['implementation-gate'].attempts.length, 2);
 });
 
+test('technical design review and pinned code drift complete through recorded CTO gates', async () => {
+  const design = await playGraph('technical-design', { 'technical-design-gate': 'accept' }, 'completed');
+  assert.equal(design.nodeStates['comprehension-review'].status, 'completed');
+  assert.equal(design.nodeStates['design-audit'].status, 'completed');
+  const packet = reviewPacket(design, 'comprehension-review');
+  assert.equal(packet.freshContextRequired, true);
+  assert.deepEqual(packet.candidates.map(item => item.nodeId), ['draft-technical-design']);
+  assert.equal(packet.candidates[0].output.contextIndex[0].path, 'src/order.mjs');
+  const decisionId = design.nodeStates['technical-design-gate'].attempts.at(-1).decisionId;
+  const artifact = design.nodeStates['draft-technical-design'].artifacts[0];
+  const drift = await playGraph('design-drift', { 'drift-gate': 'ready' }, 'completed', {
+    engine: design._engine,
+    input: { feature: design.input.feature, product_decision_refs: design.input.product_decision_refs,
+      technical_design_context: { design: { artifactId: artifact.id, version: artifact.version }, decisionId },
+      code_sha: 'c'.repeat(40) }
+  });
+  assert.equal(drift.nodeStates['compare-design-code'].output.rows[0].status, 'matched');
+});
+
 test('readiness rework reruns classification before any implementation plan is accepted', async () => {
   const run = await playGraph('implementation', {
     'classify-implementation': ['feature', 'feature'], 'readiness-gate': ['rework', 'proceed'],
@@ -310,7 +351,7 @@ test('method skills and provenance are included in the runtime pack', () => {
   assert.ok(pack.roles['lead-engineer'].skills.includes('systematic-debugging'));
   assert.ok(pack.roles['lead-engineer'].skills.includes('development-loop'));
   assert.ok(pack.roles['product-owner'].skills.includes('lifecycle-orchestration'));
-  assert.deepEqual(Object.keys(pack.methodReferences).sort(), ['adaptivePlanning', 'blueprint', 'debugging', 'development', 'discovery', 'factory', 'lifecycle', 'monitoring', 'release', 'requirements']);
+  assert.deepEqual(Object.keys(pack.methodReferences).sort(), ['adaptivePlanning', 'blueprint', 'debugging', 'designAssurance', 'development', 'discovery', 'factory', 'lifecycle', 'monitoring', 'release', 'requirements']);
   assert.equal(pack.policies.lifecycle.readiness, 'pass-concerns-fail-with-explicit-gaps');
 });
 

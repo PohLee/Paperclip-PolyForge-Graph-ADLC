@@ -1,0 +1,38 @@
+# Elephant-Goldfish Model 对 ADLC 的补强研究
+
+核查日期：2026-10-29。上游基线为 [`google/elephant-goldfish-model@f0ba151b252c9abf1318d9fe857a43265d06de89`](https://github.com/google/elephant-goldfish-model/commit/f0ba151b252c9abf1318d9fe857a43265d06de89)，当日 `main` 最新提交；插件清单版本为 [`0.1.0`](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/plugin.json)。本地比较对象为 ADLC Pack `0.1.9` / Core `0.6.0`。以下是源码和文档对照，未安装或运行 EGM，也没有证明其设计评审比 ADLC 的实际结果更好。
+
+## 上游实际机制
+
+EGM 的重点是**写代码前的设计质量**。Elephant 带着项目历史、需求和代码上下文起草，Goldfish 是没有此前对话的独立审稿者，只读设计文档、其引用材料及明确给出的阅读清单；人类决定取舍并批准设计。README 明说小而清楚的 bug fix 可沿用普通开发流程，Goldfish 审查不替代测试或人类判断。[README](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/README.md)、[架构](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/designs/architecture.md)。
+
+| 机制 | 源码/文档核查 |
+| --- | --- |
+| 澄清后再反驳概念 | `egm-brainstorm` 先形成有边界的工作假设，得到人的 readiness 确认后才调用六个视角：YAGNI、成本与配额、UX、迁移兼容、可观测性、长期维护。产物是 `concepts_brief.md`。[skill](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-brainstorm/SKILL.md) |
+| 分段起草和产品决策保留 | `egm-draft` 消费概念 brief 或已有笔记，逐节写 `design_draft.md` 并让人反馈；有多种合理架构选项时呈现机制、代价、失败条件，由 owner 选择。[skill](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-draft/SKILL.md) |
+| 分阶段设计审查 | `egm-review` 划分高层 feature 与 detailed implementation 的语义范围，执行初始 zoom-out、naive-reader comprehension、design critic、中间 zoom-out、implementation readiness。可只跑 feature 或 implementation 范围。[skill](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-review/SKILL.md) |
+| 独立 reviewer 和收敛 | `egm-review-loop` 按 persona、rubric、明确的 `GoldfishContext` 派发全新上下文 reviewer；失败重试一次并标记 `not run`，不会把未执行当成零发现。记录 stable finding ID、严重度和范围；两轮没有未解决 Blocker/Major 才算收敛，最多五轮，churn 或上限交给人决定。[skill](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-review-loop/SKILL.md) |
+| 发现项的可审计处理 | `egm-resolve` 分 `CONTEST`（审稿者可读的证据）、`ESCALATE`（证据在其阅读包外）、`PROPOSE FIX`、`DECLINE`。特别禁止以“作者本来就这样想”作 contest 证据；理解障碍须改善文档。[skill](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-resolve/SKILL.md) |
+| 长期上下文与漂移 | `egm-bootstrap` 自底向上生成目录 README；`docs/designs/SITEMAP.md` 和可选项目 Elephant skill 作导航。`egm-drift-report` 顺序读取设计与对应源码，记录缺失功能/字段、逻辑捷径、架构偏离，交给人决定改文档还是代码。这里是 agent 文件阅读和对照工作流，**不是**已证明的 AST 或持续监控器。[getting started](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/getting_started.md)、[bootstrap](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-bootstrap/SKILL.md)、[drift](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-drift-report/SKILL.md) |
+
+## 与 ADLC 当前能力的差异
+
+ADLC 已有来源请求分流、需求和验收 ID、版本化 intent 与产品决策、设计/实现 Graph、固定候选的逐条验收，以及**作者与 supervisor 不同 execution identity** 的评审。`review-handoff` 要求审查隔离包、缺陷严重度和位置，`product-memory` 会查活跃决策；不能说 ADLC 完全没有独立评审或设计治理。[Pack README](../README.md)、[review handoff](../skills/review-handoff.md)、[product memory](../skills/product-memory.md)、[evidence contract](EVIDENCE_CONTRACTS.md)。
+
+EGM 可补的短板更窄而具体：
+
+1. **复杂功能的技术设计工件。** ADLC 已有版本化需求、UI 设计身份、架构基线和实施工单，但实施 Graph 并不要求一份把方案、备选项、风险、源码边界与测试接缝连起来的已批准技术设计。可只对高影响或跨系统功能增加 `technical_design`，明确高层设计与详细实施计划两段，引用需求、产品决策、架构不变量和代码符号，再交现有 CTO readiness gate。小修复不触发。[EGM feature spec standard](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/resources/document_standards/feature-spec-standard.md)、[EGM draft](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-draft/SKILL.md)、[本地 implementation graph](../engineering-graphs.mjs)。
+2. **设计评审的上下文隔离可验证性。** ADLC `review-handoff` 指定不同执行身份和隔离包，但并未定义 reviewer 必须是*全新会话*、实际读取了哪些允许的源材料、缺失 reviewer 怎样阻断合并报告。可在重要设计或架构决策的 review packet 增加 `contextManifest`、reviewer run/identity、read receipts 和 `completed | not-run`；未运行不可当“无发现”。这借鉴 EGM 的隔离原则，但不把不同执行身份误报为零上下文。[EGM review loop](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-review-loop/SKILL.md)、[本地 review handoff](../skills/review-handoff.md)。
+3. **设计本身的多轴审查。** ADLC 的 readiness、独立实现评审和 QA 验收偏向计划/代码/候选是否就绪；可给高影响设计一张轻量矩阵：目标与非目标、系统复用/YAGNI、陌生读者能否复述、失败模式与迁移、实施定位/测试 seam。保留现有 CPO/CTO 权限，按风险选轴，不要求每张 Story 都跑五阶段多 agent。[EGM review](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-review/SKILL.md)、[本地 implementation graph](../engineering-graphs.mjs)。
+4. **设计决定的持续对账。** ADLC `product-memory` 管理产品行为决定，系统架构 Graph 管理不变量；目前 Pack 技能/Graph 没有逐份已批准设计到当前源码的漂移报告及处置状态。可为已批准技术设计、相关 `final_design_identity`、架构基线和代码符号建立索引，按变更或定期生成 `matched | doc-stale | code-diverged | unverified`，由 owner 决定改代码、更新设计或保留例外，链接后续变更。它应与产品行为决定和真实测试区分。[EGM drift](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-drift-report/SKILL.md)、[本地 product memory](../skills/product-memory.md)。
+5. **发现项闭环及停止规则。** 现有作者 self-review 最多五轮、P0/P1 交 supervisor，缺少针对*独立设计审稿*的 stable finding、已证实反驳/可见范围外升级、修复后复发和审稿者失败状态。先用记录结构和小规模设计试点，之后再评估两轮 clean 的成本收益。[EGM resolve](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-resolve/SKILL.md)、[EGM loop](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-review-loop/SKILL.md)、[本地 review handoff](../skills/review-handoff.md)。
+6. **项目上下文导航。** EGM 的目录 README 与设计索引可减少重复探路；ADLC 更适合一个指向现有 PRD、架构、不变量、产品决策和验证配方的项目本地索引，并要求引用真实路径/符号。递归生成所有目录 README 容易制造维护负担，可只为高改动区域试点。[EGM getting started](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/getting_started.md)、[EGM bootstrap](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/skills/egm-bootstrap/SKILL.md)。
+
+建议先做 **1 + 2 + 3 的高风险设计试点**，再做 **4 的设计/代码对账**。每项用现有 Core 行为评测或实际设计案例比较：遗漏的关键问题、误报、额外人工轮次、最终实施返工。结论是机制候选，而非已测得的效益。
+
+## 适用边界与成熟度
+
+- EGM 专注**设计前置和文档维护**。它的实施阶段由项目自己的工程技能决定；不提供 ADLC 的产品来源治理、逐条候选验收、发布和生产监控 Graph。[getting started](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/getting_started.md)、[架构](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/designs/architecture.md)。
+- 真正的 Goldfish 需要宿主能创建全新上下文子代理；没有该能力时上游规则会停止该类审查。各宿主共用技能文本，但 persona 注册、权限和嵌套方式不同；Codex 使用通用 subagent 读取 persona 文件。[harnesses](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/docs/harnesses.md)。
+- 上游 [`TESTING.md`](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/TESTING.md) 记录 Antigravity、Claude Code、Codex 的 fixture 端到端与隔离检查；Cowork 和 ChatGPT Work 的云端子代理 trace 仍有缺口。离线测试主要查 frontmatter、链接和 manifest，不是设计审稿质量评测。README 的“Thousands of Google engineers”是项目自述，不作为独立效果证据。[README](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/README.md)、[测试记录](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/TESTING.md)。
+- EGM README 明示这是 Apache-2.0 开源项目，**不是 Google 官方支持产品**。如以后引用原文或移植文件，需单独处理许可；本研究仅提炼机制。[README](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/README.md)、[license](https://github.com/google/elephant-goldfish-model/blob/f0ba151b252c9abf1318d9fe857a43265d06de89/LICENSE)。

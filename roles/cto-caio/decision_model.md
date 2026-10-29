@@ -51,6 +51,96 @@ Decision authority for this role. The JSON block is loaded by the pack at runtim
       }
     },
     {
+      "type": "technical-design-acceptance",
+      "requiredEvidence": [
+        "technical_design",
+        "design_comprehension",
+        "design_audit"
+      ],
+      "modes": {
+        "manual": {
+          "allowedRoles": [
+            "human-owner"
+          ],
+          "allowedKinds": [
+            "human"
+          ],
+          "requiresHuman": true,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "assisted": {
+          "allowedRoles": [
+            "cto-caio"
+          ],
+          "allowedKinds": [
+            "agent",
+            "human"
+          ],
+          "requiresHuman": false,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "autonomous": {
+          "allowedRoles": [
+            "cto-caio"
+          ],
+          "allowedKinds": [
+            "agent",
+            "human"
+          ],
+          "requiresHuman": false,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        }
+      }
+    },
+    {
+      "type": "design-drift-disposition",
+      "requiredEvidence": [
+        "design_drift_report",
+        "accepted_technical_design",
+        "code_sha"
+      ],
+      "modes": {
+        "manual": {
+          "allowedRoles": [
+            "human-owner"
+          ],
+          "allowedKinds": [
+            "human"
+          ],
+          "requiresHuman": true,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "assisted": {
+          "allowedRoles": [
+            "cto-caio"
+          ],
+          "allowedKinds": [
+            "agent",
+            "human"
+          ],
+          "requiresHuman": false,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        },
+        "autonomous": {
+          "allowedRoles": [
+            "cto-caio"
+          ],
+          "allowedKinds": [
+            "agent",
+            "human"
+          ],
+          "requiresHuman": false,
+          "continueWhen": "A durable Decision Record has been written and all required evidence points to the artifact version examined.",
+          "escalateWhen": "Required evidence is missing, P0/P1 risk is unresolved without permitted acceptance, or actor authority is insufficient."
+        }
+      }
+    },
+    {
       "type": "code-delivery-disposition",
       "requiredEvidence": [
         "delivery_report",

@@ -4,6 +4,8 @@ Use when selecting the next workflow or handing work across product, design, eng
 
 Use system-architecture when establishing or revising system boundaries; otherwise link an accepted architecture baseline or a reviewed non-applicability rationale into implementation. Optionally use code-delivery for sourced PR-head checks and observed merge evidence. Both workflows preserve the separate release process and its human authority.
 
+For a complex or high-impact feature, route the accepted requirement through `technical-design` before implementation and carry its accepted artifact and decision as `technical_design_context`. After implementation, run `design-drift` against a pinned code SHA when the design must remain authoritative. Small bounded changes keep the ordinary route. The host decides applicability and authenticates fresh review sessions and source reads.
+
 Use request-triage for an issue, external PR, or feedback item that needs a sourced ready brief, information request, or closure. A ready report may be linked as `triage_handoff` into the named discovery or implementation Graph; direct approved requests can still enter their existing path.
 
 1. Classify the entry: idea, planned feature, clear small change, defect, or production signal. Select only the analysis and planning depth needed to expose material decisions. A clear small change may enter implementation with an already approved requirement; a defect enters root-cause investigation first.

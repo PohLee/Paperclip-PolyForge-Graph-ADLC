@@ -1,6 +1,24 @@
-# Evidence contracts — ADLC 0.1.9
+# Evidence contracts — ADLC 0.1.10
 
-Requires Core 0.6.0+. The core validates submitted coverage and identity. The host authenticates actors, executes checks and verifies external sources. Schema validity cannot establish that a command ran or a remote PR is still current. Fetch this full pinned policy document when dispatch context is truncated.
+Requires Core 0.7.0+. The core validates submitted coverage and identity. The host authenticates actors, executes checks and verifies external sources. Schema validity cannot establish that a command ran or a remote PR is still current. Fetch this full pinned policy document when dispatch context is truncated.
+
+## Technical design and comprehension
+
+Use the optional `technical-design` Graph for complex or high-impact features. Start with `feature`, an active approved `product_decision_refs` set, and `versioned_requirement: {id, version}`. The Principal Engineer submits one `technical_design` artifact and structured output:
+
+```json
+{"requirementRefs":[{"artifactId":"REQ-1","version":"v1"}],"problem":"Concurrent writes diverge","scope":"Order API","approach":"Single writer","rollback":"Restore old route","alternatives":[{"name":"Dual writer","reason":"Race risk"}],"boundaries":[{"path":"src/order.mjs","responsibility":"Own writes"}],"failureModes":[{"scenario":"Store unavailable","handling":"Retry safely"}],"verification":[{"claim":"Single writer","check":"ACL test"}],"contextIndex":[{"path":"src/order.mjs","purpose":"Inspect write boundary"}]}
+```
+
+The context index is a targeted navigation aid. The host then starts a fresh, isolated comprehension session and gives it the restricted review packet plus indexed sources. The Lead Engineer submits one `design_comprehension` artifact with exact `designRefs`, a paraphrase, host-authenticated `sessionRef`, every indexed path in `readPaths`, and `gaps` with stable IDs and summaries. QA submits one `design_audit` artifact bound to the same design version. `axes` contains exactly one `zoom-out-reuse`, `comprehension`, `failure-modes`, and `implementation-feasibility` row, each with `verdict: pass|concern|block` and `evidenceRef`. `findings` contain unique ID, axis, severity (`P0`–`P3`), summary and evidence reference.
+
+The CTO gate accepts only when the comprehension has no gaps and no audit axis is blocked. Every finding requires `design_finding_disposition` decision evidence with `findingId`, `status: resolved|accepted-risk`, `reason`, and `subjectRefs` for the exact current design and audit artifacts. Resolved needs `proofRef`; accepted risk requires an authenticated human owner. Normal and escalated gate paths enforce the same contract. Rework starts at the draft and preserves prior attempts. A different execution ID is enforced by the Graph; actual fresh session isolation and source reads must be authenticated by the host.
+
+For complex/high-impact implementation, pass `technical_design_context: {design:{artifactId,version},decisionId}`. Core checks a recorded accepted `technical-design` gate, exact design version, feature, and pinned requirement. This input is optional for ordinary or defect work. The host decides applicability and the current approved design; Core does not infer risk from prose.
+
+## Design and code drift
+
+Start the optional `design-drift` Graph with the same feature and requirement, accepted `technical_design_context`, and full `code_sha`. Submit one `design_drift_report` artifact with exact `designRefs`, the pinned `codeSha`, and rows containing unique `id`, `designClaim`, `codeRef`, `observed`, `evidenceRef`, and `status: matched|doc-stale|code-diverged|unverified`. The CTO may choose `ready` only when all rows match. Otherwise hold, reconcile code or documentation through its normal change path, then rerun against a new pinned revision or accepted design version. The host authenticates checkout SHA and observations; the report does not change code or certify a release.
 
 ## Request triage
 

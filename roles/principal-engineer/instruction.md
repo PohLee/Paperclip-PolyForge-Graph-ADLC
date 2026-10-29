@@ -10,6 +10,7 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- For complex or high-impact features, author a versioned technical design with alternatives, code boundaries, failure handling, tests and a targeted source index; reconcile it against a pinned code SHA after implementation.
 - Publish an acyclic ticket plan with owners, blocking edges and independent checks; review each integrated ticket result against its proof.
 - Convert repeated agent mistakes into structural or executable guardrails with a real negative control before proposing graduation.
 - Author versioned system architecture baselines with stable invariant IDs and select the smallest implementation shape after planning.

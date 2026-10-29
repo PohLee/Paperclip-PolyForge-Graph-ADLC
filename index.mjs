@@ -6,6 +6,7 @@ import { engineeringGraphs } from './engineering-graphs.mjs';
 import { designGraph } from './design-graph.mjs';
 import { lifecycleGraphs } from './lifecycle-graphs.mjs';
 import { architectureDeliveryGraphs } from './architecture-delivery-graphs.mjs';
+import { designAssuranceGraphs } from './design-assurance-graphs.mjs';
 import { roleCatalog } from './roles/catalog.mjs';
 import { skillCatalog } from './skills/catalog.mjs';
 
@@ -27,6 +28,8 @@ const roleSkills = {
 };
 for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'product-owner']) roleSkills[role].push('architecture-baseline');
 for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'qa-engineer']) roleSkills[role].push('code-delivery', 'check-execution');
+for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'qa-engineer']) roleSkills[role].push('technical-design-review');
+for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer']) roleSkills[role].push('design-drift');
 roleSkills.cpo.push('verification-review');
 const skillIds = [...new Set(Object.values(roleSkills).flat())];
 if (skillIds.length !== Object.keys(skillCatalog).length || skillIds.some(id => !skillCatalog[id])) {
@@ -53,7 +56,7 @@ function loadRole(spec) {
 }
 
 const roles = Object.fromEntries(roleCatalog.map(spec => [spec.id, loadRole(spec)]));
-const graphs = [lifecycleGraphs[0], lifecycleGraphs[1], designGraph, ...engineeringGraphs, ...lifecycleGraphs.slice(2), ...architectureDeliveryGraphs];
+const graphs = [lifecycleGraphs[0], lifecycleGraphs[1], designGraph, ...engineeringGraphs, ...lifecycleGraphs.slice(2), ...architectureDeliveryGraphs, ...designAssuranceGraphs];
 const operatingPolicies = readFileSync(resolve(root, 'OPERATING_POLICIES.md'), 'utf8');
 const evidenceContracts = readFileSync(resolve(root, 'docs/EVIDENCE_CONTRACTS.md'), 'utf8');
 const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.rules.flatMap(rule =>
@@ -66,12 +69,14 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 ));
 
 export const pack = {
-  id: 'adlc', version: '0.1.9', schemaVersion: 1,
+  id: 'adlc', version: '0.1.10', schemaVersion: 1,
   graphs, roles, skills, decisionRules,
   graphStartRoles: {
     'request-triage': ['product-owner', 'cpo', 'human-owner'],
     'system-architecture': ['principal-engineer', 'cto-caio', 'human-owner'],
     'code-delivery': ['principal-engineer', 'cto-caio', 'human-owner'],
+    'technical-design': ['principal-engineer', 'cto-caio', 'human-owner'],
+    'design-drift': ['principal-engineer', 'cto-caio', 'human-owner'],
     'product-discovery': ['product-owner', 'cpo', 'human-owner'],
     'ui-ux-design': ['product-owner', 'cpo', 'human-owner'],
     implementation: ['product-owner', 'principal-engineer', 'cto-caio', 'human-owner'],
@@ -83,9 +88,10 @@ export const pack = {
   policyDocuments: { operatingPolicies, evidenceContracts },
   policyDocumentDigests: { operatingPolicies: digest(operatingPolicies), evidenceContracts: digest(evidenceContracts) },
   runtimeRequirements: {
-    coreContracts: 'Requires Core 0.6.0 or later for triage, work-plan, verification-profile and prior contracts. Host check runner is an explicit capability; verify external evidence authenticity and select the current approved architecture baseline before dispatch.',
+    coreContracts: 'Requires Core 0.7.0 or later for technical-design, comprehension, audit and drift contracts. Host check runner is an explicit capability; verify external evidence authenticity and select current approved baselines before dispatch.',
     binding: 'Bind every role to a runtime actor at deployment. A single agent may hold several roles.',
     independentReview: 'The review execution/session identity must differ from every author execution named by independentOf; one Agent may hold both roles in separate executions.',
+    designComprehension: 'For technical-design comprehension, the host must start a fresh session without author conversation or hidden draft context; authenticate sessionRef and source reads. Core validates declared structure and distinct execution only, not actual isolation or understanding.',
     humanOwner: 'Bind human-owner to an authenticated human operation identity; an agent suggestion is never a human approval.',
     capabilities: 'Resolve each role capabilityRequirement to a real tool, permission or harness before dispatch. Bundled skills are prompt instructions, not claims about installed tools.',
     releaseExecution: 'The host must verify that the acceptance decision covers the exact candidate, enforce the named human release-start decision on its exact plan and candidate before any production action, and validate the execution event against that authorization. Start release-observation only from that verified event; the Graph never invokes a pipeline or certifies a release.',
@@ -110,7 +116,8 @@ export const pack = {
     development: 'https://github.com/cursor/plugins/tree/main/pstack',
     discovery: 'https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works',
     release: 'https://sre.google/sre-book/release-engineering/',
-    monitoring: 'https://sre.google/sre-book/monitoring-distributed-systems/'
+    monitoring: 'https://sre.google/sre-book/monitoring-distributed-systems/',
+    designAssurance: 'https://github.com/google/elephant-goldfish-model/tree/f0ba151b252c9abf1318d9fe857a43265d06de89'
   },
   policies: {
     acceptanceProof: { coverage: 'every-criterion-once', fail: 'blocks-accept', unverified: 'human-owner-exception-with-reason-risk-and-matrix-version' },
@@ -120,6 +127,7 @@ export const pack = {
     correctionGuardrails: { graduation: 'human-owner-two-interventions-enforcement-proof-negative-control' },
     implementationShape: ['backend', 'frontend', 'fullstack', 'parallel'],
     architecture: { baseline: 'accepted-version-and-decision', invariants: 'stable-INV-IDs', implementationStatus: 'separate-from-acceptance' },
+    technicalDesign: { scope: 'complex-or-high-impact-feature', comprehension: 'fresh-host-session', reviewAxes: ['zoom-out-reuse', 'comprehension', 'failure-modes', 'implementation-feasibility'], findings: 'individual-dispositions', drift: 'pinned-code-SHA-and-accepted-design' },
     codeDelivery: { optional: true, evidence: 'pinned-PR-head', actions: 'observe-only', productionAuthority: false },
     lifecycle: {
       entryPaths: ['idea', 'planned-feature', 'clear-change', 'defect', 'production-signal'],

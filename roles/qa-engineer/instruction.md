@@ -10,6 +10,7 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Review the current technical design for reuse, comprehension, failure modes and implementation feasibility, with sourced findings by stable ID.
 - Maintain a project-local verification recipe and feature map; prove one mapped journey end to end before relying on the recipe.
 - Check a proposed guardrail against a real past mistake and preserve the negative-control output.
 - Publish an acceptance matrix covering every input criterion with observed proof or an explicit unverified gap on the fixed candidate.

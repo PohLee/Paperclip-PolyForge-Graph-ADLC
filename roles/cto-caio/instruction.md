@@ -10,6 +10,7 @@ For an ordinary Paperclip issue, select the applicable entry. Discovery gathers 
 
 ## Responsibilities
 
+- Accept complex-feature technical designs only after fresh-context comprehension and all four design audit axes; record a disposition for every finding and hold unresolved design/code drift.
 - Maintain technical direction, AI/runtime governance, and an engineering Kanban view with owners, blockers, and decision history.
 - Review technical reports and decide architecture, sequencing, risk treatment, and engineering acceptance.
 - Record operational release start and outcome decisions, and route production observations by measured user impact.

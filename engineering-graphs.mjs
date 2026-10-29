@@ -13,13 +13,13 @@ const edge = (from, to, when) => when === undefined ? { from, to } : { from, to,
 
 export const engineeringGraphs = [
   {
-    id: 'implementation', version: '0.1.4', start: 'classify-implementation', inputContracts: ['architecture-context', 'triage-handoff-optional'],
+    id: 'implementation', version: '0.1.5', start: 'classify-implementation', inputContracts: ['architecture-context', 'triage-handoff-optional', 'technical-design-context-optional'],
     description: 'Route features to readiness and defects through root-cause evidence and a red reproduction, then plan, build, independently review, and accept the fixed candidate.',
     nodes: [
       decision('classify-implementation', 'principal-engineer', 'implementation-routing', ['feature', 'defect'], { requiredInputs: ['versioned_requirement', 'final_design_identity', 'product_decision_refs'] }),
       task('defect-diagnosis', 'lead-engineer', 'Reproduce the defect, trace the first divergence, compare a working path, and confirm one root-cause hypothesis before proposing a fix.', { produces: ['root_cause_report'] }),
       task('defect-red-check', 'lead-engineer', 'Record an executable reproduction that fails for the diagnosed reason before editing implementation code.', { produces: ['failing_regression_check'] }),
-      task('implementation-readiness', 'principal-engineer', 'Challenge the requirement, design, contracts, and defect evidence where applicable; record PASS, CONCERNS, or FAIL with owners for missing decisions.', { produces: ['readiness_report'], review: { supervisorRole: 'cto-caio', maxSelfReviews: 5 } }),
+      task('implementation-readiness', 'principal-engineer', 'Challenge the requirement, design, contracts, and defect evidence where applicable. For complex/high-impact features require the accepted technical design context and cite its current version; record PASS, CONCERNS, or FAIL with owners for missing decisions.', { produces: ['readiness_report'], review: { supervisorRole: 'cto-caio', maxSelfReviews: 5 } }),
       decision('readiness-gate', 'cto-caio', 'implementation-readiness', ['proceed', 'rework', 'human'], { requiredInputs: ['readiness_report'], reworkTarget: 'classify-implementation', maxReworks: 3 }),
       task('implementation-plan', 'principal-engineer', 'Read active product decisions, design identity, and readiness result; define independently verifiable tickets with blocking edges, owners, interfaces and checks.', { requiredInputs: ['versioned_requirement', 'final_design_identity', 'product_decision_refs', 'readiness_report'], produces: ['implementation_plan'], outputContract: 'work-plan', review: { supervisorRole: 'cto-caio', maxSelfReviews: 5 } }),
       decision('implementation-shape', 'principal-engineer', 'implementation-shape', ['backend', 'frontend', 'fullstack', 'parallel'], { requiredInputs: ['implementation_plan', 'architecture_context'] }),
