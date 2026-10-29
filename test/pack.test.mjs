@@ -64,7 +64,7 @@ test('ADLC department heads report to the company CEO without changing review es
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.2.0');
+  assert.equal(pack.version, '0.2.1');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === 'ceo').length, 2);
@@ -74,7 +74,7 @@ test('ADLC department heads report to the company CEO without changing review es
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
     assert.match(role.documents.instruction, /organizational reporting line.*Graph node/s);
   }
-  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.5', '0.1.3', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
+  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.5', '0.1.4', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
   assert.equal(pack.policies.cpoCtoConflict.protocolVersion, 2);
 });
 
@@ -162,7 +162,9 @@ test('no-change design decision routes to preserving the existing design identit
 });
 
 async function playGraph(graphId, routes, expectedStatus, options = {}) {
-  const engine = options.engine ?? new GraphEngine();
+  // Pure Core graph exercise: the host Shadow dispatch lifecycle is tested by the host.
+  const engine = options.engine ?? new GraphEngine({ availableCapabilities: graphId === 'verification'
+    ? { 'shadow-review-execution':'1.0.0' } : {} });
   if (!options.engine) await engine.registerPack(pack);
   const starter = { kind: 'human', id: 'owner', roles: ['human-owner'] };
   const feature = `scenario-${graphId}`;
@@ -471,6 +473,17 @@ test('release observation requires a host execution event and records all three 
     const run = await playGraph('release-observation', { 'release-outcome': outcome }, 'completed');
     assert.equal(run.nodeStates[endNode].status, 'completed');
   }
+});
+
+test('verification cannot start without its required Shadow execution capability', async () => {
+  const engine = new GraphEngine();
+  await engine.registerPack(pack);
+  await assert.rejects(engine.startRun({ packId:pack.id, packVersion:pack.version, graphId:'verification', mode:'manual',
+    actor:{kind:'human',id:'owner',roles:['human-owner','product-owner']},
+    input:{projectId:'project-1',implementation_candidate:{id:'CODE-1',version:'v1'},
+      versioned_requirement:{id:'REQ-1',version:'v1'},product_decision_refs:['PD-1'],
+      acceptance_criteria:[{id:'AC-1',description:'Behavior works',requirementIds:['REQ-1']}]} }),
+  /shadow-review-execution/);
 });
 
 test('observed ADLC release hands off to Marketing only for the same project and contract version', async () => {

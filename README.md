@@ -4,7 +4,7 @@ The official collection exports independently versioned domain Packs for [PolyFo
 
 | Pack | Version | Scope |
 | --- | --- | --- |
-| [ADLC](packs/adlc/README.md) | `adlc@0.2.0` | Product discovery through observed software release and monitoring |
+| [ADLC](packs/adlc/README.md) | `adlc@0.2.1` | Product discovery through observed software release and monitoring |
 | [Marketing](packs/marketing/README.md) | `marketing@0.0.1` | Acquisition planning and sourced outcome review |
 
 ```js
@@ -19,7 +19,7 @@ Each Pack has its own version, `compatibility` contract, content digest, release
 
 The Core and host own one company CEO, reporting to the Board. ADLC CPO and CTO/CAIO, and Marketing CMO, reference that CEO through `reportsToRole:'ceo'`. The Packs do not instantiate another CEO. Agents can hold multiple Pack roles, with host bindings keyed by `packId:roleId`. Each run and cross-Pack plan carries the same company and project identity; a project may have ADLC and Marketing work concurrently. The CEO pins a `goal.md`/OKR plan version to delegated tasks. Later plan edits affect NEW tasks only. Every decision is recorded. A role rejects an out-of-scope request with a reason and sends it to the CEO for routing. Mandatory human decisions, unresolved conflict, and authority outside CEO scope reach the authenticated human owner.
 
-Artifact self review stops when P0/P1 findings are resolved or after five rounds, then goes to the Graph reviewer with full attempt history. Any shadow reviewer requires a real independent host execution, closure after the task, and retained audit. A role label alone cannot establish independence. The candidate host advertises `shadow-review-execution` only for its exact deterministic local process fixture with an existing budget and a bounded timeout. Production model Shadows and per-session currency caps remain unavailable; an optional Pack declaration does not enable them.
+Artifact self review stops when P0/P1 findings are resolved or after five rounds, then goes to the Graph reviewer with full attempt history. ADLC verification QA now declares a required same-Agent Shadow review of the frozen candidate before normal QA dispatch. The host must provide a separate execution, one review task, one concurrent session, a deadline within 15 minutes, closure, and retained audit. Only an accepted closed result permits dispatch; a non-accept result pauses the parent run for recovery. The QA artifact still receives its distinct supervisor review. The declaration makes no claim that a paid model improves quality. Other Graphs do not require Shadow.
 
 ## ADLC to Marketing handoff
 
@@ -29,9 +29,9 @@ Marketing outcome review requires metric source, definition, observation window,
 
 ## Compatibility
 
-| Core artifact | ADLC 0.1.10 | ADLC 0.2.0 | Marketing 0.0.1 | Evidence |
+| Core artifact | ADLC 0.2.0 | ADLC 0.2.1 | Marketing 0.0.1 | Evidence |
 | --- | --- | --- | --- | --- |
-| Existing Core 0.7.x baseline | Supported by prior ADLC release | Incompatible by declared range | Incompatible by declared range | Prior tag retained; declared `>=0.8.0 <0.9.0` for new Packs |
-| Proposed Core 0.8.0 local candidate | Outside prior release claim | Passes pinned artifact tests | Passes pinned artifact tests | Local contract artifact `sha256:6241292cc678ef7c877fbc3578d298f399a399090e43d12f6671d03dafcf4dad`; 31/31 Pack tests pass |
+| Core 0.8.0 local candidate | Passed pinned artifact tests | Incompatible by declared range | Passed pinned artifact tests | Prior 31/31 Pack test report retained |
+| Core 0.8.1 local candidate | Within prior declared range | Target of this candidate | Within declared range | Pin and test the exact Core source artifact before activation |
 
-The 0.8.0 row is a local source snapshot, not a published Core release. The pinned artifact report identifies ADLC payload `sha256:d138a969666124fc0da62c2750aa75f3fc019124bb95725fae9c3498c7a27e12` and Marketing payload `sha256:d5dac8b69b1983c0ae94e92d142523db90746e6b1299478827afe87ec20ac260`. All 31 Pack tests ran against that pinned artifact, including the receipt and target version handoff checks. `docs/COMPATIBILITY.md` describes the artifact gate. Host capabilities are declared by ID and version: Core company control, cross-Pack plans and handoffs are required; sourced metrics, verified release events, shadow execution and Dashboard read models are gated at the affected route.
+The earlier 0.8.0 test used local Core artifact `sha256:6241292cc678ef7c877fbc3578d298f399a399090e43d12f6671d03dafcf4dad`, ADLC 0.2.0 payload `sha256:d138a969666124fc0da62c2750aa75f3fc019124bb95725fae9c3498c7a27e12`, and Marketing 0.0.1 payload `sha256:d5dac8b69b1983c0ae94e92d142523db90746e6b1299478827afe87ec20ac260`. ADLC 0.2.1 candidate payload is `sha256:82948420027ec8ba6d6e3410248b6a90348761c81b52630047f8fac90f856fb5`. Existing active runs keep their pinned 0.2.0 snapshot; registration of 0.2.1 does not change them. `docs/COMPATIBILITY.md` describes the artifact gate. Core company control, cross-Pack plans and handoffs remain required for the Pack. The Shadow execution capability is required only for the verification Graph; sourced metrics, verified release events and Dashboard read models remain gated at their affected routes.

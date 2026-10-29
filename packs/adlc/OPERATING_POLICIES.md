@@ -14,6 +14,8 @@ For an important artifact, the author checks a specific artifact version and rec
 
 The Design Lead's independent evaluator is the Product Manager; the CPO makes the selection. The Principal Engineer reviews Lead Engineer code with a distinct actor and execution identity. Any agent may fill multiple roles outside an independent review boundary. The host checks actual identity rather than a role label.
 
+Before dispatching verification QA, the host runs the declared Shadow review against the frozen candidate. The Shadow uses the same bound QA Agent in a separate execution, may only review one task in one concurrent session, and expires within 15 minutes. The host accepts normal QA dispatch only after an accepted and closed Shadow result for that exact candidate. Any other result pauses the parent run for recovery, with no independent supervisor bypass. The subsequent QA artifact still goes to its distinct supervisor. The Shadow gate makes no claim that use of a paid model improves quality.
+
 ## CPO and CTO + CAIO conflict
 
 Adapted from PolyLens [Collision Engine](https://github.com/PohLee/PolyLens/blob/92ed5fadd31177f67166e855a6e7e56a8a79c767/engines/collision.md) and [Synthesis Engine](https://github.com/PohLee/PolyLens/blob/92ed5fadd31177f67166e855a6e7e56a8a79c767/engines/synthesis.md):

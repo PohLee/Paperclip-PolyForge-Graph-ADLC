@@ -12,15 +12,34 @@ test('collection exports two independent Pack releases and keeps ADLC default', 
   assert.equal(pack, defaultPack);
   assert.equal(pack, adlcPack);
   assert.deepEqual(Object.keys(packCatalog), ['adlc','marketing']);
-  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.0','marketing@0.0.1']);
+  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.1','marketing@0.0.1']);
   const engine = new GraphEngine();
   for (const item of packs) {
-    assert.equal(item.compatibility.coreRange, '>=0.8.0 <0.9.0');
+    assert.equal(item.compatibility.coreRange, item.id === 'adlc' ? '>=0.8.1 <0.9.0' : '>=0.8.0 <0.9.0');
     assert.deepEqual(item.compatibility.contracts, CORE_RUNTIME.contracts);
     const { release, ...payload } = item;
     assert.equal(release.digest, `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`);
     await engine.registerPack(item);
   }
+});
+
+test('Shadow is required only for ADLC verification QA in the new release', () => {
+  const verification = adlcPack.graphs.find(graph => graph.id === 'verification');
+  assert.equal(verification.version, '0.1.4');
+  assert.deepEqual(verification.compatibility.requiredCapabilities,
+    { 'shadow-review-execution': '>=1.0.0 <2.0.0' });
+  assert.deepEqual(verification.nodes.find(node => node.id === 'qa').shadow,
+    { trigger:'before-dispatch', reviewer:'same-agent', required:true });
+  assert.ok(verification.nodes.filter(node => node.shadow).every(node => node.id === 'qa'));
+  assert.ok(adlcPack.graphs.filter(graph => graph.id !== 'verification')
+    .every(graph => !graph.compatibility?.requiredCapabilities?.['shadow-review-execution'] &&
+      graph.nodes.every(node => !node.shadow)));
+  assert.ok(marketingPack.graphs.every(graph => !graph.compatibility?.requiredCapabilities?.['shadow-review-execution'] &&
+    graph.nodes.every(node => !node.shadow)));
+  assert.equal(adlcPack.policies.shadowVerification.action, 'review');
+  assert.equal(adlcPack.policies.shadowVerification.maxTasks, 1);
+  assert.equal(adlcPack.policies.shadowVerification.maxConcurrent, 1);
+  assert.equal(adlcPack.policies.shadowVerification.maxDurationSeconds, 900);
 });
 
 test('Pack roles reference one company CEO and every Graph role has a document', () => {

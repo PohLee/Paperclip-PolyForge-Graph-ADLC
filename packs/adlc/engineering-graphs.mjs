@@ -49,11 +49,14 @@ export const engineeringGraphs = [
     ]
   },
   {
-    id: 'verification', version: '0.1.3', start: 'freeze-candidate', inputContracts: ['acceptance-criteria', 'project-verification-optional'],
-    description: 'Verify one fixed candidate in parallel; rework requires a changed implementation candidate and a new verification run.',
+    id: 'verification', version: '0.1.4', start: 'freeze-candidate', inputContracts: ['acceptance-criteria', 'project-verification-optional'],
+    compatibility: { requiredCapabilities: { 'shadow-review-execution': '>=1.0.0 <2.0.0' } },
+    description: 'Verify one fixed candidate with a required same-Agent Shadow review before QA dispatch; rework requires a changed implementation candidate and a new verification run.',
     nodes: [
       task('freeze-candidate', 'product-owner', 'Pin the implementation candidate, requirement and decision versions for this verification run.', { requiredInputs: ['implementation_candidate', 'versioned_requirement', 'product_decision_refs'], produces: ['fixed_candidate_identity'] }),
-      task('qa', 'qa-engineer', 'Test behavior and exploratory edge cases against the fixed candidate.', { produces: ['qa_report'] }),
+      task('qa', 'qa-engineer', 'Test behavior and exploratory edge cases against the fixed candidate.', {
+        produces: ['qa_report'], shadow: { trigger: 'before-dispatch', reviewer: 'same-agent', required: true }
+      }),
       task('security', 'security-engineer', 'Inspect threat model and security controls against the fixed candidate.', { produces: ['security_report'] }),
       task('regression', 'qa-engineer', 'Run regression coverage for protected product behavior against the fixed candidate.', { produces: ['regression_report'] }),
       join('verification-ready'),
