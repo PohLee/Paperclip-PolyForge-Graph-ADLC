@@ -1,9 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GraphEngine, readyWorkTickets } from '../../Paperclip-PolyForge-Graph/src/core/index.mjs';
-import { reviewPacket } from '../../Paperclip-PolyForge-Graph/src/plugin/review-context.mjs';
+import { createHash, createHmac } from 'node:crypto';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const coreArtifact = process.env.PINNED_CORE_ARTIFACT;
+const moduleUrl = path => coreArtifact ? pathToFileURL(resolve(coreArtifact,path)).href : new URL(`../../Paperclip-PolyForge-Graph/${path}`,import.meta.url).href;
+const { GraphEngine, MemoryStore, CompanyControlPlane, readyWorkTickets } = await import(moduleUrl('src/core/index.mjs'));
+const { reviewPacket } = await import(moduleUrl('src/plugin/review-context.mjs'));
 import { pack } from '../index.mjs';
-import { roleCatalog, roleResponsibilities } from '../roles/catalog.mjs';
+import { marketingPack } from '../index.mjs';
+import { roleCatalog, roleResponsibilities } from '../packs/adlc/roles/catalog.mjs';
 
 test('published pack registers with the core validator and has the lifecycle inventory', async () => {
   const engine = new GraphEngine();
@@ -43,9 +49,9 @@ test('every task role and supervisor maps to a documented blueprint', () => {
   }
 });
 
-test('organization has two Board roots and nine specified reporting edges without changing review escalation', () => {
+test('ADLC department heads report to the company CEO without changing review escalation', () => {
   const reportsTo = {
-    cpo: null, 'cto-caio': null,
+    cpo: 'ceo', 'cto-caio': 'ceo',
     'internal-product-analyst': 'cpo', 'external-product-analyst': 'cpo',
     'product-manager': 'cpo', 'product-owner': 'cpo', 'ui-ux-designer-lead': 'cpo',
     'principal-engineer': 'cto-caio', 'lead-engineer': 'cto-caio',
@@ -58,11 +64,11 @@ test('organization has two Board roots and nine specified reporting edges withou
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.1.10');
+  assert.equal(pack.version, '0.2.0');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
-  assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === null).length, 2);
-  assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole !== null).length, 9);
+  assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === 'ceo').length, 2);
+  assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole !== 'ceo').length, 9);
   for (const role of Object.values(pack.roles)) {
     assert.match(role.documents.role, /## Organization\n\nReports to /);
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
@@ -170,7 +176,7 @@ async function playGraph(graphId, routes, expectedStatus, options = {}) {
     ...(['product-discovery', 'request-triage'].includes(graphId) ? { source_request: { id: 'IDEA-1', version: 'v1' } } : {}),
     ...(graphId === 'release-process' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, verification_decision: { id: 'ACCEPT-1', version: 'v1' } } : {}),
     ...(graphId === 'release-observation' ? { implementation_candidate: { id: 'CODE-1', version: 'v1' }, release_execution_event: { id: 'EXEC-1', version: 'v1' }, release_plan_identity: { id: 'PLAN-1', version: 'v1' }, release_authorization_decision: { id: 'START-1', version: 'v1' } } : {}),
-    ...(graphId === 'production-monitoring' ? { service_identity: { id: 'SERVICE-1', version: 'v1' }, monitoring_plan_identity: { id: 'MON-PLAN-1', version: 'v1' }, observation_window: { start: '2026-10-28T00:00:00Z', end: '2026-10-28T01:00:00Z' }, signal_snapshot: { id: 'SIGNAL-1', version: 'v1' } } : {}) };
+    ...(graphId === 'production-monitoring' ? { service_identity: { id: 'SERVICE-1', version: 'v1' }, monitoring_plan_identity: { id: 'MON-PLAN-1', version: 'v1' }, observation_window: { start: '2026-10-28T00:00:00Z', end: '2026-10-28T01:00:00Z' }, signal_snapshot: { id: 'SIGNAL-1', version: 'v1' } } : {}), ...options.input };
   const run = await engine.startRun({ packId: pack.id, packVersion: pack.version, graphId, mode: 'autonomous', actor: starter, input });
   const next = Object.fromEntries(Object.entries(routes).map(([key, value]) => [key, Array.isArray(value) ? [...value] : [value]]));
   let count = 0;
@@ -198,7 +204,15 @@ async function playGraph(graphId, routes, expectedStatus, options = {}) {
       const artifacts = selected ? [{ kind: 'final_design_identity', id: selected.artifactId, version: selected.version }] : [];
       await engine.decideNode({ runId: run.id, nodeId: node.id, actor, outcome, reason: `Scenario route ${outcome}`, evidence, artifacts });
     } else {
-      const artifacts = node.type === 'task' ? (node.produces ?? []).map(kind => ({ kind, id: `${node.id}-${kind}-artifact-${count}`, version: 'v1' })) : [];
+      const artifacts = node.type === 'task' ? (node.produces ?? []).map(kind => {
+        const base = { kind, id: `${node.id}-${kind}-artifact-${count}`, version: 'v1' };
+        if (kind !== 'release_execution_record') return base;
+        const sourceRefs = ['release_execution_event','implementation_candidate','release_authorization_decision'].map(key =>
+          ({ kind:'run_input', key, id:input[key].id, version:input[key].version }));
+        const record = { releaseEvent:input.release_execution_event, candidate:input.implementation_candidate,
+          authorization:input.release_authorization_decision, target:'production', observedResult:'release execution recorded by host' };
+        return { ...base, sourceRefs, record, digest:`sha256:${createHash('sha256').update(JSON.stringify(record)).digest('hex')}` };
+      }) : [];
       const workDecision = node.decisionTraceRequired ? await engine.recordWorkDecision({
         runId: run.id, nodeId: node.id, actor, category: node.role === 'ui-ux-designer-lead' ? 'product' : 'process',
         question: `Which pinned procedure applies to ${node.id}?`,
@@ -457,6 +471,69 @@ test('release observation requires a host execution event and records all three 
     const run = await playGraph('release-observation', { 'release-outcome': outcome }, 'completed');
     assert.equal(run.nodeStates[endNode].status, 'completed');
   }
+});
+
+test('observed ADLC release hands off to Marketing only for the same project and contract version', async () => {
+  const store = new MemoryStore();
+  const engine = new GraphEngine({ store, availableCapabilities:{ 'verified-release-event':'1.0.0' } });
+  const control = new CompanyControlPlane({ store, companyId: 'company-1', availableCapabilities:{ 'verified-release-event':'1.0.0' }, trustedProviders:['fixture-release-provider'] });
+  const owner = { kind:'human', id:'owner', roles:['human-owner'] };
+  await engine.registerPack(pack);
+  await engine.registerPack(marketingPack);
+  await control.configureSetup({ actor:owner, reason:'Use one company CEO', organization:{ board:{id:'board-1'}, ceo:{id:'ceo-1'}, domainHeads:[{domain:'product',agentId:'cpo-1'},{domain:'engineering',agentId:'cto-1'},{domain:'marketing',agentId:'cmo-1'}] } });
+  await control.enablePack({ actor:owner, reason:'Enable ADLC', packId:'adlc', version:pack.version });
+  await control.enablePack({ actor:owner, reason:'Enable Marketing', packId:'marketing', version:marketingPack.version });
+  const source = await playGraph('release-observation', { 'release-outcome':'complete' }, 'completed', { engine,
+    input:{ projectId:'project-1', paperclipCompanyId:'company-1' } });
+  const event = source.nodeStates['record-release-execution'].artifacts.find(item => item.kind === 'release_execution_record');
+  assert.ok(event?.digest);
+  assert.equal(event.digest, `sha256:${createHash('sha256').update(JSON.stringify(event.record)).digest('hex')}`);
+  for (const key of ['release_execution_event','implementation_candidate','release_authorization_decision']) {
+    assert.ok(event.sourceRefs.some(ref => ref.kind === 'run_input' && ref.key === key && ref.id === source.input[key].id && ref.version === source.input[key].version));
+  }
+  const unverifiedHost = new CompanyControlPlane({ store, companyId:'company-1' });
+  await assert.rejects(unverifiedHost.recordHandoff({ actor:owner, reason:'Host has not verified release execution', projectId:'project-1', sourceRunId:source.id,
+    targetPackId:'marketing', targetGraphId:'acquisition-plan', contract:'adlc.release-to-marketing', contractVersion:1,
+    sourceEvent:{ id:event.id, version:event.version, digest:event.digest }, artifacts:[] }), /verified-release-event/);
+  await assert.rejects(control.recordHandoff({ actor:owner, reason:'Incorrect contract version', projectId:'project-1', sourceRunId:source.id,
+    targetPackId:'marketing', targetGraphId:'acquisition-plan', contract:'adlc.release-to-marketing', contractVersion:2,
+    sourceEvent:{ id:event.id, version:event.version, digest:event.digest }, artifacts:[] }), /not declared/);
+  await assert.rejects(control.recordHandoff({ actor:owner, reason:'Missing authenticated receipt', projectId:'project-1', sourceRunId:source.id,
+    targetPackId:'marketing', targetGraphId:'acquisition-plan', contract:'adlc.release-to-marketing', contractVersion:1,
+    sourceEvent:{ id:event.id, version:event.version, digest:event.digest }, artifacts:[] }), /evidence receipt/);
+  const now = Date.now();
+  const unsignedReceipt = { id:'release-receipt-1', providerId:'fixture-release-provider', companyId:'company-1', projectId:'project-1', kind:'release',
+    issuedAt:new Date(now-60_000).toISOString(), expiresAt:new Date(now+3_600_000).toISOString(),
+    subjectRefs:[source.input.release_execution_event,source.input.implementation_candidate,source.input.release_authorization_decision,
+      {id:event.id,version:event.version,digest:event.digest}],
+    data:{sourceRunId:source.id,releaseEvent:source.input.release_execution_event,candidate:source.input.implementation_candidate,
+      authorizationDecisionId:source.input.release_authorization_decision.id} };
+  const signature = createHmac('sha256','fixture-secret').update(JSON.stringify(unsignedReceipt)).digest('hex');
+  const receipt = { ...unsignedReceipt, signature:{algorithm:'HMAC-SHA256',keyId:'fixture-key',value:signature} };
+  assert.equal(receipt.signature.value,createHmac('sha256','fixture-secret').update(JSON.stringify(unsignedReceipt)).digest('hex'));
+  await assert.rejects(control.recordEvidenceReceipt({ receipt, actor:{kind:'system',id:'untrusted',roles:[]}, reason:'Forged provider' }), /authenticated evidence provider/);
+  await control.recordEvidenceReceipt({ receipt, actor:{kind:'system',id:'host-verifier',roles:['evidence-provider:fixture-release-provider']}, reason:'Fixture HMAC verified by host' });
+  await assert.rejects(control.recordHandoff({ actor:owner, reason:'Wrong source digest', projectId:'project-1', sourceRunId:source.id,
+    targetPackId:'marketing', targetGraphId:'acquisition-plan', contract:'adlc.release-to-marketing', contractVersion:1,
+    sourceEvent:{id:event.id,version:event.version,digest:`sha256:${'0'.repeat(64)}`}, artifacts:[], evidenceReceiptId:receipt.id }), /do not match/);
+  const handoff = await control.recordHandoff({ actor:owner, reason:'Observed release can inform acquisition planning', projectId:'project-1', sourceRunId:source.id,
+    targetPackId:'marketing', targetGraphId:'acquisition-plan', contract:'adlc.release-to-marketing', contractVersion:1,
+    sourceEvent:{ id:event.id, version:event.version, digest:event.digest }, artifacts:[{ id:event.id, version:event.version, digest:event.digest, kind:event.kind }], evidenceReceiptId:receipt.id });
+  assert.equal(handoff.targetPack.version,marketingPack.version);
+  assert.equal(handoff.targetGraph.version,marketingPack.graphs.find(graph => graph.id === 'acquisition-plan').version);
+  const decision = await engine.recordProductDecision({ feature:'marketing-project-1', actor:owner, status:'approved', outcome:'Use approved release positioning', reason:'Marketing plan baseline', evidence:[{kind:'release',id:event.id}] });
+  const input = { projectId:'project-1', paperclipCompanyId:'company-1', feature:'marketing-project-1', handoffId:handoff.id,
+    release_handoff:{ id:handoff.id, version:'v1', digest:event.digest }, product_decision_refs:[decision.id] };
+  const run = await engine.startRun({ packId:'marketing', packVersion:marketingPack.version, graphId:'acquisition-plan', input, actor:owner, mode:'manual' });
+  assert.equal(run.input.projectId, 'project-1');
+  await assert.rejects(engine.startRun({ packId:'marketing', packVersion:marketingPack.version, graphId:'acquisition-plan',
+    input:{ ...input, projectId:'project-2' }, actor:owner, mode:'manual' }), /Handoff does not authorize/);
+  const next = structuredClone(marketingPack); next.version = '0.0.2';
+  const { release:_oldRelease, ...nextPayload } = next;
+  next.release = { ...next.release, digest:`sha256:${createHash('sha256').update(JSON.stringify(nextPayload)).digest('hex')}` };
+  await engine.registerPack(next);
+  await control.enablePack({ actor:owner, reason:'Test target version pinning', packId:'marketing', version:next.version });
+  await assert.rejects(engine.startRun({packId:'marketing',packVersion:next.version,graphId:'acquisition-plan',input,actor:owner,mode:'manual'}),/Handoff does not authorize.*version/);
 });
 
 test('monitoring evaluates one sourced window and routes health, watch, incident, and data gaps', async () => {

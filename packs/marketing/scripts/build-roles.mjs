@@ -1,0 +1,15 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { roleCatalog, decisionTypes } from '../roles/catalog.mjs';
+const root = fileURLToPath(new URL('..', import.meta.url));
+for (const role of roleCatalog) {
+  const dir = resolve(root, 'roles', role.id); mkdirSync(dir, { recursive:true });
+  const head = `# ${role.name}\n\n`;
+  writeFileSync(resolve(dir,'soul.md'), head + role.soul + '\n');
+  writeFileSync(resolve(dir,'role.md'), head + role.role + `\n\n## Organization\n\nReports to \`${role.reportsToRole}\` at company scope. The company binds one CEO across all Packs.\n\n## Artifact review\n\nDefault escalation: \`${role.supervisor}\`. The Graph node selects the reviewer. A shadow reviewer needs a host-created distinct execution and is closed after the task; the audit remains.\n`);
+  writeFileSync(resolve(dir,'goal.md'), head + role.goal + '\n');
+  writeFileSync(resolve(dir,'instruction.md'), head + `## Work\n\n${role.method}\n\n## Scope and handoff\n\nRead the CEO goal and pinned OKR plan before acting. A request outside this role is rejected with a recorded reason and routed to the CEO for reassignment. CEO plan edits apply only to NEW tasks; an active attempt retains its pinned goal and plan version. The host binds company, project, Pack, role, and Graph attempt. Read approved product decisions and change history before changing a claim. Submit immutable artifacts and every decision with actor, role, evidence, rationale, and outcome. An ADLC release handoff means an observed release event, not permission to launch a campaign. External publication, spend, and messaging require their own human authorization and host capability.\n\n## Review\n\nSelf review an artifact version for no more than five rounds. Submit unresolved P0/P1 findings and full attempt history to the Graph-designated independent reviewer. A fifth round never approves work.\n`);
+  const rules = role.rules.map(type => ({ type, requiredEvidence:decisionTypes[type], modes:Object.fromEntries(['manual','assisted','autonomous'].map(mode => { const human=mode!=='autonomous'; return [mode,{ allowedRoles:human?['human-owner']:type==='review-disposition'?['cmo','human-owner']:[role.id], allowedKinds:human?['human']:['agent','human'], requiresHuman:human, continueWhen:'Write a durable decision on pinned evidence within approved scope.', escalateWhen:'Evidence is missing, P0/P1 is unresolved, authority is outside scope, or human approval is mandatory.' }]; })) }));
+  writeFileSync(resolve(dir,'decision_model.md'), head + 'The JSON decision matrix is the runtime authority source. Out-of-scope decisions go to the CEO for routing or to the human owner when mandatory.\n\n```json\n' + JSON.stringify({ schemaVersion:1, role:role.id, rules },null,2) + '\n```\n');
+}

@@ -1,10 +1,18 @@
 {
-  "name": "@paperclip-polyforge/adlc-pack",
-  "version": "0.1.10",
+  "name": "@paperclip-polyforge/packs",
+  "version": "0.2.0",
   "type": "module",
-  "exports": "./index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./adlc": "./packs/adlc/index.mjs",
+    "./marketing": "./packs/marketing/index.mjs"
+  },
   "scripts": {
-    "build:roles": "node scripts/build-roles.mjs",
+    "build:roles": "node packs/adlc/scripts/build-roles.mjs && node packs/marketing/scripts/build-roles.mjs",
+    "build:adlc": "node scripts/build-pack.mjs adlc",
+    "build:marketing": "node scripts/build-pack.mjs marketing",
+    "release:adlc": "node scripts/tag-pack.mjs adlc",
+    "release:marketing": "node scripts/tag-pack.mjs marketing",
     "test": "node --test"
   }
 }

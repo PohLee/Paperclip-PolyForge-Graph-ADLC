@@ -1,67 +1,37 @@
-# Paperclip PolyForge Graph — ADLC Pack
+# Paperclip PolyForge Graph Packs
 
-Versioned Agentic Development Life Cycle domain pack for the separate [PolyForge Graph core](../Paperclip-PolyForge-Graph). Import `pack` from `index.mjs`, register it with `GraphEngine.registerPack(pack)`, and bind its role IDs to real Paperclip agents or authenticated human operations in the host. The pack contains no agent UUIDs or installed-tool claims.
+The official collection exports independently versioned domain Packs for [PolyForge Graph Core](../Paperclip-PolyForge-Graph). The root `pack` and default export remain ADLC for existing imports. New hosts should register every entry in `packs` or select one from `packCatalog`.
 
-Current pack version: `adlc@0.1.10`, requiring Core `0.7.0` or later. Design is `0.1.2`, discovery is `0.1.1`, verification is `0.1.3`, implementation is `0.1.5`, and other graphs are `0.1.0`. Every artifact-producing task requires an attempt-bound work Decision Record. See [evidence contracts and input examples](docs/EVIDENCE_CONTRACTS.md), [method/agent mapping](docs/FACTORY_BLUEPRINT_ADAPTATION.md), [MCode adaptation](docs/MCODE_STACK_ADAPTATION.md), [Matt/pstack adaptation](docs/MATT_PSTACK_ADAPTATION.md), and [Elephant Goldfish research](docs/ELEPHANT_GOLDFISH_RESEARCH.md).
-
-## Included workflows
-
-| Graph | Result | Main route |
+| Pack | Version | Scope |
 | --- | --- | --- |
-| `request-triage@0.1.0` | `request_ready`, `request_needs_info`, or `request_closed` | check source issue, external PR, or feedback; preserve a ready brief, information gap, or closure reason; follow-up links prior needs-info report and reporter update |
-| `product-discovery@0.1.1` | `accepted_intent` or `no_build_decision` | optional ready triage handoff; frame the problem, gather internal and user/external evidence, synthesize options, human CPO disposition: advance, more research, or stop |
-| `ui-ux-design@0.1.2` | `final_design_identity` | none/minor/major; major runs principle research, two wireframes, norms/PO/blind filters, one or two promoted directions, four frozen and independently checked visuals per direction, at most two finalists, optional isolated A/B prototypes, and CPO selection of exactly one current frozen finalist |
-| `implementation@0.1.5` | `implementation_acceptance` | architecture context and optional accepted technical design context; feature/defect classification and readiness; acyclic ticket plan; select backend/frontend/fullstack/parallel; ALL join of active branches; integrated per-ticket proof; independent review; CTO gate with bounded rework |
-| `verification@0.1.3` | `acceptance_decision` | pin one candidate and criterion list; optional project verification profile; parallel QA/security/regression; criterion proof matrix; CPO acceptance or human exception for unverified gaps |
-| `release-process@0.1.0` | `ready_for_host_execution` or `release_held` | pin the verified candidate; plan, preflight and coordinate; a named human records operational start or hold |
-| `release-observation@0.1.0` | `release_recorded`, `recovery_pending`, or `incident_handoff` | start only from a host-supplied execution event and linked plan/authorization; run smoke and health checks; human outcome decision |
-| `production-monitoring@0.1.0` | `healthy_observation`, `watch_scheduled`, `incident_handoff`, or `health_unverified` | evaluate one sourced observation window against a versioned monitoring plan and route the evidence |
-| `system-architecture@0.1.0` | `architecture_acceptance` | optional baseline with diagram, stable invariant IDs, enforcement/proof and separate implementation status; CTO acceptance/rework |
-| `code-delivery@0.1.0` | `code_delivery_ready`, `code_merge_observed`, `code_delivery_held` | optional final PR-head checks, review, approvals and merge event; no merge or production action |
-| `technical-design@0.1.0` | `accepted_technical_design` | optional complex-feature design, fresh-session comprehension report, four-axis audit, per-finding disposition and CTO gate |
-| `design-drift@0.1.0` | `design_code_reconciled` or `design_code_drift_held` | optional accepted-design versus pinned-code comparison with sourced drift rows |
-
-Design and implementation use bounded `reworkTarget` resets that keep prior attempts and decisions. Verification `rework_required` is a distinct terminal status that hands work back for a changed candidate and new verification run. Old reports remain attached to the version they actually assessed. Human escalation pauses a run.
-
-## Runtime contract
+| [ADLC](packs/adlc/README.md) | `adlc@0.2.0` | Product discovery through observed software release and monitoring |
+| [Marketing](packs/marketing/README.md) | `marketing@0.0.1` | Acquisition planning and sourced outcome review |
 
 ```js
-import { pack } from './index.mjs';
-await engine.registerPack(pack);
-await engine.startRun({ packId: pack.id, packVersion: pack.version,
-  graphId: 'implementation', mode: 'assisted', input, actor });
+import { packs, packCatalog } from '@paperclip-polyforge/packs';
+for (const pack of packs) await engine.registerPack(pack);
+// Existing import { pack } still selects ADLC.
 ```
 
-The host supplies trusted actor identity, role bindings, execution identity, available capabilities, and versioned artifacts. The `roles` map contains five Markdown documents per role and SHA-256 digests. `decisionRules` are parsed from role decision models. Twenty-seven bundled skills are carried in `pack.skills`; each role lists the skills it uses. The host provides them to the runtime and resolves real capabilities. Supervisor review uses a distinct execution identity. Normal human gates need `human-owner` plus the gate's domain role; resolving an escalated human gate requires authenticated `human-owner` authority.
+Each Pack has its own version, `compatibility` contract, content digest, release artifact, and `packId/vVersion` tag. Earlier ADLC tags and source history remain intact. `node scripts/build-pack.mjs adlc` and `node scripts/build-pack.mjs marketing` write deterministic payloads to `dist/<id>/<version>/pack.json` and verify `release.digest`. After reviewing and committing a package, `node scripts/tag-pack.mjs <id>` creates its annotated tag; it never pushes. `npm run build:roles` refreshes source role documents. `npm test` runs conformance tests.
 
-Discovery starts from a sourced request without an approved product decision. An `advance` decision accepts the versioned intent for requirements definition; before the existing design or implementation graphs start, the host must record the approved product decision and pass exact requirement and design identities. The release process graph stops at `ready_for_host_execution`. The host then performs the release with its actual procedure and starts release observation only after supplying the execution event, plan identity, authorization decision and candidate identity. The pack does not select a pipeline, execute production changes, or provide full release certification. Before production monitoring starts, the host supplies a versioned monitoring plan with service owner, signal definitions, sources, thresholds, freshness and action owner. The graph evaluates one supplied window; telemetry ingestion, scheduling, paging and recovery execution remain host capabilities.
+## Company and project boundaries
 
-## Method alignment
+The Core and host own one company CEO, reporting to the Board. ADLC CPO and CTO/CAIO, and Marketing CMO, reference that CEO through `reportsToRole:'ceo'`. The Packs do not instantiate another CEO. Agents can hold multiple Pack roles, with host bindings keyed by `packId:roleId`. Each run and cross-Pack plan carries the same company and project identity; a project may have ADLC and Marketing work concurrently. The CEO pins a `goal.md`/OKR plan version to delegated tasks. Later plan edits affect NEW tasks only. Every decision is recorded. A role rejects an out-of-scope request with a reason and sends it to the CEO for routing. Mandatory human decisions, unresolved conflict, and authority outside CEO scope reach the authenticated human owner.
 
-| Reference | Applied in this pack |
-| --- | --- |
-| [Anthropic AI-native SDLC playbook](https://claude.com/resources/articles/the-ai-native-sdlc-playbook) | `lifecycle-orchestration` carries sourced intent → accepted spec → plan → candidate/tests → review → verification → decision, with versioned handoffs and feedback into the next change. |
-| [BMad Method](https://www.bmadcode.com/method) | `requirements-discovery` and `product-definition` scale planning to uncertainty, give requirements stable IDs, and check readiness for missing decisions before implementation. |
-| [Superpowers systematic debugging](https://github.com/obra/superpowers/tree/main/skills/systematic-debugging) | `systematic-debugging` and the defect route require investigation, comparison, one tested hypothesis, a red reproduction, and focused verification. |
-| [Matt Pocock skills](https://github.com/mattpocock/skills) | Requirements discovery, request triage, and ticket planning use clarification, durable briefs, independently verifiable slices and blocking edges. |
-| [pstack](https://github.com/cursor/plugins/tree/main/pstack) | `development-loop`, application verification and correction guardrails use tight feedback, real user-path proof and negative controls for repeated errors. |
-| [GOV.UK discovery guidance](https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works) | `product-discovery` investigates the user problem and permits a reasoned no-build decision. |
-| [Google SRE release engineering](https://sre.google/sre-book/release-engineering/) and [DORA deployment guidance](https://dora.dev/capabilities/deployment-automation/) | `release-process` separates preparation from execution; `release-observation` requires an external execution event and records the observed result. |
-| [Google SRE monitoring guidance](https://sre.google/sre-book/monitoring-distributed-systems/) | `production-monitoring` tracks user-facing symptoms, explicit windows and data gaps before routing incidents. |
-| [Google Elephant Goldfish Model](https://github.com/google/elephant-goldfish-model/tree/f0ba151b252c9abf1318d9fe857a43265d06de89) | `technical-design-review` and `design-drift` add risk-scoped design, fresh-context comprehension, multi-axis findings and code drift reconciliation without adopting the full upstream loop. |
+Artifact self review stops when P0/P1 findings are resolved or after five rounds, then goes to the Graph reviewer with full attempt history. Any shadow reviewer requires a real independent host execution, closure after the task, and retained audit. A role label alone cannot establish independence. The candidate host advertises `shadow-review-execution` only for its exact deterministic local process fixture with an existing budget and a bounded timeout. Production model Shadows and per-session currency caps remain unavailable; an optional Pack declaration does not enable them.
 
-These are adaptations of the named methods, not bundled copies or claims that their external plugins are installed. The [best-practice research note](docs/ADLC_BEST_PRACTICES.md) lists the first-party sources, artifacts, and pack/host boundary in detail.
+## ADLC to Marketing handoff
 
-`roles[*].reportsToRole` defines the Paperclip organization, separate from `supervisorRole` for artifact review escalation. `null` means direct reporting to Board: CPO and CTO + CAIO are Board peers. Internal Product Analyst, External Product Analyst, Product Manager, Product Owner, and UI/UX Designer Lead report to CPO. Principal Engineer, Lead Engineer, QA Engineer, and Security Engineer report to CTO + CAIO. A Graph node's `review.supervisorRole` selects its actual artifact reviewer and can differ from the organizational manager.
+`adlc.release-to-marketing@1` is declared in ADLC `handoffContracts` and Marketing `incomingHandoffs`. The host may record it only after `release-observation` reaches `release_recorded` from a verified host execution event and authenticated release outcome. The completed `record-release-execution` node produces a `release_execution_record` with a content digest and exact source references to the pinned execution event, candidate, and release authorization. A trusted host provider authenticates a release evidence receipt whose subject references include that record ID/version/digest. The handoff binds the shared `projectId`, source and target Pack/Graph versions, the receipt, product decision and knowledge references. The target is `marketing/acquisition-plan`; it produces a proposal, not a campaign launch. External publication or spend needs separate human authorization and execution capability.
 
-Every artifact-producing task records a sourced work choice in the current attempt and submits its ID in `decisionIds`. The core checks actor, execution, attempt, and active product decision references. CPO/CTO conflict protocol v2 requires independent positions and a documented negotiation before human resolution. Named external design, developer-subagent, and security methods are conditional on actual host installation and permission.
+Marketing outcome review requires metric source, definition, observation window, freshness and baseline. Missing, stale or unauthenticated metrics route to `measurement_unknown`; no success number is inferred. Product decisions, supersession links and change history remain available across the handoff.
 
-Every required evidence item is identified by `kind`. Gate evidence must also reference the exact current candidate artifacts with `subjectRefs`. The host records a decision before following its route. It should link product decisions, history and artifact versions to each change. See [operating policies](OPERATING_POLICIES.md) and the core contract for method details.
+## Compatibility
 
-## Maintenance
+| Core artifact | ADLC 0.1.10 | ADLC 0.2.0 | Marketing 0.0.1 | Evidence |
+| --- | --- | --- | --- | --- |
+| Existing Core 0.7.x baseline | Supported by prior ADLC release | Incompatible by declared range | Incompatible by declared range | Prior tag retained; declared `>=0.8.0 <0.9.0` for new Packs |
+| Proposed Core 0.8.0 local candidate | Outside prior release claim | Passes pinned artifact tests | Passes pinned artifact tests | Local contract artifact `sha256:6241292cc678ef7c877fbc3578d298f399a399090e43d12f6671d03dafcf4dad`; 31/31 Pack tests pass |
 
-Edit `roles/catalog.mjs`, then run `node scripts/build-roles.mjs` to refresh the agent Markdown. Review the generated `decision_model.md` blocks: they are the runtime source of decision authority. Increment the pack and affected graph versions before publishing changed behavior. Existing runs retain the previous snapshot.
-
-Validate with `node --test`. The tests use the sibling core source and require both repositories side by side.
-
-Licensing for this separate pack has not yet been selected.
+The 0.8.0 row is a local source snapshot, not a published Core release. The pinned artifact report identifies ADLC payload `sha256:d138a969666124fc0da62c2750aa75f3fc019124bb95725fae9c3498c7a27e12` and Marketing payload `sha256:d5dac8b69b1983c0ae94e92d142523db90746e6b1299478827afe87ec20ac260`. All 31 Pack tests ran against that pinned artifact, including the receipt and target version handoff checks. `docs/COMPATIBILITY.md` describes the artifact gate. Host capabilities are declared by ID and version: Core company control, cross-Pack plans and handoffs are required; sourced metrics, verified release events, shadow execution and Dashboard read models are gated at the affected route.
