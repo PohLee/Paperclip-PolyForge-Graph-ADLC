@@ -1,11 +1,12 @@
 # Paperclip PolyForge Graph Packs
 
-The official collection exports independently versioned domain Packs for [PolyForge Graph Core](../Paperclip-PolyForge-Graph). The root `pack` and default export remain ADLC for existing imports. New hosts should register every entry in `packs` or select one from `packCatalog`.
+The official collection exports independently versioned Packs for [PolyForge Graph Core](https://github.com/PohLee/Paperclip-PolyForge-Graph). The root `pack` and default export remain ADLC for existing imports. New hosts should register every entry in `packs` or select one from `packCatalog`.
 
 | Pack | Version | Scope |
 | --- | --- | --- |
-| [ADLC](packs/adlc/README.md) | `adlc@0.2.3` | Product discovery through observed software release and monitoring |
-| [Marketing](packs/marketing/README.md) | `marketing@0.0.3` | Acquisition planning and sourced outcome review |
+| [ADLC](packs/adlc/README.md) | `adlc@0.2.4` | Product discovery through observed software release and monitoring |
+| [Marketing](packs/marketing/README.md) | `marketing@0.0.4` | Acquisition planning and sourced outcome review |
+| [ADLC Creative Team](packs/adlc-creative-team-pack/README.md) | `creative-team@0.1.0` | Creative intake, brand, concept and design workflows |
 
 ```js
 import { packs, packCatalog } from '@paperclip-polyforge/packs';
@@ -13,9 +14,9 @@ for (const pack of packs) await engine.registerPack(pack);
 // Existing import { pack } still selects ADLC.
 ```
 
-For deployments that retain installed releases, opt into `@paperclip-polyforge/packs/catalog` (or `./catalog.mjs`). Its `packs` array includes available immutable `dist/adlc/0.2.0`, `dist/adlc/0.2.1`, and `dist/marketing/0.0.1` payloads alongside the latest source Packs. Missing complete `dist` releases are skipped; incomplete or digest-mismatched release files fail loading. The regular `index.mjs` exports remain latest-source only. Register all catalog entries to keep enabled and running pinned versions available after an upgrade.
+For deployments that retain installed releases, opt into `@paperclip-polyforge/packs/catalog` (or `./catalog.mjs`). Its `packs` array includes available immutable `dist/adlc/0.2.0`, `dist/adlc/0.2.1`, `dist/marketing/0.0.1`, and `dist/creative-team/0.1.0` payloads alongside the latest source Packs. Missing complete `dist` releases are skipped; incomplete or digest-mismatched release files fail loading. The regular `index.mjs` exports remain latest-source only. Register all catalog entries to keep enabled and running pinned versions available after an upgrade.
 
-Each Pack has its own version, `compatibility` contract, content digest, release artifact, and `packId/vVersion` tag. Earlier ADLC tags and source history remain intact. `node scripts/build-pack.mjs adlc` and `node scripts/build-pack.mjs marketing` write deterministic payloads to `dist/<id>/<version>/pack.json` and verify `release.digest`. After reviewing and committing a package, `node scripts/tag-pack.mjs <id>` creates its annotated tag; it never pushes. `npm run build:roles` refreshes source role documents. `npm test` runs conformance tests.
+Each Pack has its own version, `compatibility` contract, content digest, release artifact, and `packId/vVersion` tag. `node scripts/build-pack.mjs <id>` writes a deterministic payload to `dist/<id>/<version>/pack.json` and verifies `release.digest`. After reviewing and committing a package, `node scripts/tag-pack.mjs <id>` creates its annotated tag; it never pushes. `npm run build:roles` refreshes source role documents. `npm test` runs collection conformance tests.
 
 ## Company and project boundaries
 

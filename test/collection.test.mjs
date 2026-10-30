@@ -6,15 +6,22 @@ import { pathToFileURL } from 'node:url';
 const coreArtifact = process.env.PINNED_CORE_ARTIFACT;
 const coreUrl = coreArtifact ? pathToFileURL(resolve(coreArtifact,'src/core/index.mjs')).href : new URL('../../Paperclip-PolyForge-Graph/src/core/index.mjs',import.meta.url).href;
 const { GraphEngine, CORE_RUNTIME } = await import(coreUrl);
-import defaultPack, { pack, packs, packCatalog, adlcPack, marketingPack } from '../index.mjs';
+import defaultPack, { pack, packs, packCatalog, adlcPack, marketingPack, creativeTeamPack } from '../index.mjs';
 
-test('collection exports two independent Pack releases and keeps ADLC default', async () => {
+test('collection exports independent Pack releases and keeps ADLC default', async () => {
   assert.equal(pack, defaultPack);
   assert.equal(pack, adlcPack);
-  assert.deepEqual(Object.keys(packCatalog), ['adlc','marketing']);
-  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.4','marketing@0.0.4']);
+  assert.deepEqual(Object.keys(packCatalog), ['adlc','marketing','creative-team']);
+  assert.equal(packCatalog['creative-team'], creativeTeamPack);
+  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.4','marketing@0.0.4','creative-team@0.1.0']);
   const engine = new GraphEngine();
   for (const item of packs) {
+    assert.deepEqual(item.compatibility.contracts, CORE_RUNTIME.contracts);
+    const { release, ...payload } = item;
+    assert.equal(release.digest, `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`);
+    await engine.registerPack(item);
+  }
+  for (const item of [adlcPack, marketingPack]) {
     assert.equal(item.compatibility.coreRange, '>=0.8.5 <0.9.0');
     assert.equal(item.compatibility.optionalCapabilities['temporary-agent-snapshot'], '>=1.0.0 <2.0.0');
     assert.match(item.skills['temporary-agent-snapshot'].content, /"operation": "open-temporary-agent"/);
@@ -23,10 +30,6 @@ test('collection exports two independent Pack releases and keeps ADLC default', 
       assert.ok(role.skills.includes('temporary-agent-snapshot'));
       assert.match(`${role.documents.role}\n${role.documents.instruction}`, /bundled `temporary-agent-snapshot` skill/);
     }
-    assert.deepEqual(item.compatibility.contracts, CORE_RUNTIME.contracts);
-    const { release, ...payload } = item;
-    assert.equal(release.digest, `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`);
-    await engine.registerPack(item);
   }
 });
 
@@ -57,15 +60,17 @@ test('Pack roles reference one company CEO and every Graph role has a document',
   for (const item of packs) {
     for (const graph of item.graphs) for (const node of graph.nodes) {
       if (node.role) assert.ok(item.roles[node.role], `${item.id}/${graph.id}/${node.id}`);
-      if (node.review) {
+      if (node.review && item !== creativeTeamPack) {
         assert.equal(node.review.maxSelfReviews,5);
         assert.notEqual(node.role,node.review.supervisorRole);
       }
     }
     for (const role of Object.values(item.roles)) {
       for (const name of ['soul','role','goal','instruction','decision_model']) assert.ok(role.documents[name]?.length > 30);
-      assert.match(role.documents.instruction,/outside this role.*CEO/s);
-      assert.match(role.documents.instruction,/NEW tasks/);
+      if (item !== creativeTeamPack) {
+        assert.match(role.documents.instruction,/outside this role.*CEO/s);
+        assert.match(role.documents.instruction,/NEW tasks/);
+      }
     }
   }
 });

@@ -6,14 +6,17 @@
     ".": "./index.mjs",
     "./adlc": "./packs/adlc/index.mjs",
     "./marketing": "./packs/marketing/index.mjs",
+    "./creative-team": "./packs/adlc-creative-team-pack/index.mjs",
     "./catalog": "./catalog.mjs"
   },
   "scripts": {
     "build:roles": "node packs/adlc/scripts/build-roles.mjs && node packs/marketing/scripts/build-roles.mjs",
     "build:adlc": "node scripts/build-pack.mjs adlc",
     "build:marketing": "node scripts/build-pack.mjs marketing",
+    "build:creative-team": "node scripts/build-pack.mjs creative-team",
     "release:adlc": "node scripts/tag-pack.mjs adlc",
     "release:marketing": "node scripts/tag-pack.mjs marketing",
+    "release:creative-team": "node scripts/tag-pack.mjs creative-team",
     "test": "node --test test/*.test.mjs"
   }
 }

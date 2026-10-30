@@ -2,6 +2,8 @@
 
 Each Pack declares a Core semver range, graph/decision/evidence contract versions, and versioned capabilities. Release metadata identifies the deterministic payload in `dist/<pack>/<version>/pack.json`: SHA-256 covers the JSON bytes excluding `release`, avoiding a self-referential digest. The current releases carry `status: candidate` and `builtAt`; tags and remote publication are separate actions.
 
+ADLC Creative Team (`creative-team@0.1.0`) is part of this collection and declares Core `>=0.8.4 <0.9.0` with graph, decision and evidence contracts at version `1`. Its release tag is `creative-team/v0.1.0`.
+
 Test a pinned, extracted Core source artifact, not a mutable sibling checkout. The artifact must contain `src/core/index.mjs` and its imports; the full suite also needs `src/plugin/review-context.mjs`. The current contract artifact contains `src/core/` and that review-context module. It does not certify every host plugin module. Compute the sorted file-tree digest as relative path, NUL byte, file bytes for each file with `scripts/test-compatibility.mjs --core-artifact <path> --print-digest true`; save that digest as the pinned expected value. The test script checks the expected digest and Core runtime version before registration, and records the Core/Pack digest tuple and result in `dist/compat-reports/`.
 
 ```powershell
