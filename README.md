@@ -4,8 +4,8 @@ The official collection exports independently versioned domain Packs for [PolyFo
 
 | Pack | Version | Scope |
 | --- | --- | --- |
-| [ADLC](packs/adlc/README.md) | `adlc@0.2.1` | Product discovery through observed software release and monitoring |
-| [Marketing](packs/marketing/README.md) | `marketing@0.0.1` | Acquisition planning and sourced outcome review |
+| [ADLC](packs/adlc/README.md) | `adlc@0.2.3` | Product discovery through observed software release and monitoring |
+| [Marketing](packs/marketing/README.md) | `marketing@0.0.3` | Acquisition planning and sourced outcome review |
 
 ```js
 import { packs, packCatalog } from '@paperclip-polyforge/packs';
@@ -13,13 +13,15 @@ for (const pack of packs) await engine.registerPack(pack);
 // Existing import { pack } still selects ADLC.
 ```
 
+For deployments that retain installed releases, opt into `@paperclip-polyforge/packs/catalog` (or `./catalog.mjs`). Its `packs` array includes available immutable `dist/adlc/0.2.0`, `dist/adlc/0.2.1`, and `dist/marketing/0.0.1` payloads alongside the latest source Packs. Missing complete `dist` releases are skipped; incomplete or digest-mismatched release files fail loading. The regular `index.mjs` exports remain latest-source only. Register all catalog entries to keep enabled and running pinned versions available after an upgrade.
+
 Each Pack has its own version, `compatibility` contract, content digest, release artifact, and `packId/vVersion` tag. Earlier ADLC tags and source history remain intact. `node scripts/build-pack.mjs adlc` and `node scripts/build-pack.mjs marketing` write deterministic payloads to `dist/<id>/<version>/pack.json` and verify `release.digest`. After reviewing and committing a package, `node scripts/tag-pack.mjs <id>` creates its annotated tag; it never pushes. `npm run build:roles` refreshes source role documents. `npm test` runs conformance tests.
 
 ## Company and project boundaries
 
 The Core and host own one company CEO, reporting to the Board. ADLC CPO and CTO/CAIO, and Marketing CMO, reference that CEO through `reportsToRole:'ceo'`. The Packs do not instantiate another CEO. Agents can hold multiple Pack roles, with host bindings keyed by `packId:roleId`. Each run and cross-Pack plan carries the same company and project identity; a project may have ADLC and Marketing work concurrently. The CEO pins a `goal.md`/OKR plan version to delegated tasks. Later plan edits affect NEW tasks only. Every decision is recorded. A role rejects an out-of-scope request with a reason and sends it to the CEO for routing. Mandatory human decisions, unresolved conflict, and authority outside CEO scope reach the authenticated human owner.
 
-Artifact self review stops when P0/P1 findings are resolved or after five rounds, then goes to the Graph reviewer with full attempt history. ADLC verification QA now declares a required same-Agent Shadow review of the frozen candidate before normal QA dispatch. The host must provide a separate execution, one review task, one concurrent session, a deadline within 15 minutes, closure, and retained audit. Only an accepted closed result permits dispatch; a non-accept result pauses the parent run for recovery. The QA artifact still receives its distinct supervisor review. The declaration makes no claim that a paid model improves quality. Other Graphs do not require Shadow.
+Artifact self review stops when P0/P1 findings are resolved or after five rounds, then goes to the Graph reviewer with full attempt history. ADLC verification QA now declares a required same-Agent Sub-Agent review of the frozen candidate before normal QA dispatch. The host must provide a separate execution, one review task, one concurrent session, a deadline within 15 minutes, closure, and retained audit. Only an accepted closed result permits dispatch; a non-accept result pauses the parent run for recovery. The QA artifact still receives its distinct supervisor review. The declaration makes no claim that a paid model improves quality. Other Graphs do not require this review. The legacy `shadow` Graph field is retained for pinned compatibility and means a fresh independent Sub-Agent session.
 
 ## ADLC to Marketing handoff
 

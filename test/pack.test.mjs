@@ -64,7 +64,7 @@ test('ADLC department heads report to the company CEO without changing review es
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.2.1');
+  assert.equal(pack.version, '0.2.3');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === 'ceo').length, 2);
@@ -74,7 +74,7 @@ test('ADLC department heads report to the company CEO without changing review es
     assert.match(role.documents.role, /## Artifact review\n\nDefault review escalation role:/);
     assert.match(role.documents.instruction, /organizational reporting line.*Graph node/s);
   }
-  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.5', '0.1.4', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
+  assert.deepEqual(pack.graphs.map(graph => graph.version), ['0.1.0', '0.1.1', '0.1.2', '0.1.5', '0.1.5', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0', '0.1.0']);
   assert.equal(pack.policies.cpoCtoConflict.protocolVersion, 2);
 });
 
@@ -162,7 +162,7 @@ test('no-change design decision routes to preserving the existing design identit
 });
 
 async function playGraph(graphId, routes, expectedStatus, options = {}) {
-  // Pure Core graph exercise: the host Shadow dispatch lifecycle is tested by the host.
+  // Pure Core graph exercise: the host Sub-Agent review lifecycle is tested by the host.
   const engine = options.engine ?? new GraphEngine({ availableCapabilities: graphId === 'verification'
     ? { 'shadow-review-execution':'1.0.0' } : {} });
   if (!options.engine) await engine.registerPack(pack);
@@ -475,7 +475,7 @@ test('release observation requires a host execution event and records all three 
   }
 });
 
-test('verification cannot start without its required Shadow execution capability', async () => {
+test('verification cannot start without its legacy fresh Sub-Agent review capability', async () => {
   const engine = new GraphEngine();
   await engine.registerPack(pack);
   await assert.rejects(engine.startRun({ packId:pack.id, packVersion:pack.version, graphId:'verification', mode:'manual',
@@ -541,7 +541,7 @@ test('observed ADLC release hands off to Marketing only for the same project and
   assert.equal(run.input.projectId, 'project-1');
   await assert.rejects(engine.startRun({ packId:'marketing', packVersion:marketingPack.version, graphId:'acquisition-plan',
     input:{ ...input, projectId:'project-2' }, actor:owner, mode:'manual' }), /Handoff does not authorize/);
-  const next = structuredClone(marketingPack); next.version = '0.0.2';
+  const next = structuredClone(marketingPack); next.version = '0.0.4';
   const { release:_oldRelease, ...nextPayload } = next;
   next.release = { ...next.release, digest:`sha256:${createHash('sha256').update(JSON.stringify(nextPayload)).digest('hex')}` };
   await engine.registerPack(next);

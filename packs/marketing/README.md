@@ -1,6 +1,6 @@
-# Marketing Pack 0.0.1
+# Marketing Pack 0.0.3
 
-This is a minimal execution Pack with a CMO, Growth Strategist, Marketing Analyst, two Graphs, decision matrices, role documents and bundled skills. The company has one CEO; CMO reports to it. A Marketing Pack does not create a second executive.
+This source Pack targets Core `>=0.8.4 <0.9.0`. This is a minimal execution Pack with a CMO, Growth Strategist, Marketing Analyst, two Graphs, decision matrices, role documents and bundled skills. The company has one CEO; CMO reports to it. A Marketing Pack does not create a second executive.
 
 `acquisition-plan@0.0.1` starts from a persisted `adlc.release-to-marketing@1` handoff, whose source is an actually observed ADLC release with a content-digested execution record and an authenticated host receipt. Core pins the target Pack/Graph version and shared project. It pins product history, drafts bounded channel hypotheses, checks risks, and records a CMO disposition. `acquisition_plan_ready` means a reviewed proposal. It carries no authority to publish, message, or spend.
 

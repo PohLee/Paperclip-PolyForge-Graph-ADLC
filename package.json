@@ -5,7 +5,8 @@
   "exports": {
     ".": "./index.mjs",
     "./adlc": "./packs/adlc/index.mjs",
-    "./marketing": "./packs/marketing/index.mjs"
+    "./marketing": "./packs/marketing/index.mjs",
+    "./catalog": "./catalog.mjs"
   },
   "scripts": {
     "build:roles": "node packs/adlc/scripts/build-roles.mjs && node packs/marketing/scripts/build-roles.mjs",

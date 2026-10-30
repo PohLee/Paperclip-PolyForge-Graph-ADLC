@@ -28,10 +28,10 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 }))));
 
 export const pack = {
-  id:'marketing', version:'0.0.1', schemaVersion:1, graphs, roles, skills, decisionRules,
-  compatibility:{ coreRange:'>=0.8.0 <0.9.0', contracts:{graph:1,decision:1,evidence:1},
+  id:'marketing', version:'0.0.3', schemaVersion:1, graphs, roles, skills, decisionRules,
+  compatibility:{ coreRange:'>=0.8.4 <0.9.0', contracts:{graph:1,decision:1,evidence:1},
     requiredCapabilities:{'company-control':'>=1.0.0 <2.0.0','cross-pack-plans':'>=1.0.0 <2.0.0','cross-pack-handoff':'>=1.0.0 <2.0.0'},
-    optionalCapabilities:{'sourced-metrics':'>=1.0.0 <2.0.0','shadow-review-execution':'>=1.0.0 <2.0.0','dashboard-read-model':'>=1.0.0 <2.0.0'} },
+    optionalCapabilities:{'temporary-agents':'>=1.0.0 <2.0.0','sourced-metrics':'>=1.0.0 <2.0.0','shadow-review-execution':'>=1.0.0 <2.0.0','dashboard-read-model':'>=1.0.0 <2.0.0'} },
   organization:{ executiveRole:'ceo', roleScope:'company', packRolesNamespace:'marketing' },
   graphStartRoles:{'acquisition-plan':['cmo','human-owner'],'outcome-review':['cmo','human-owner']},
   incomingHandoffs:[{contract:'adlc.release-to-marketing',contractVersion:1,sourcePackId:'adlc',sourceGraphId:'release-observation',requiredStatus:'release_recorded',targetGraphId:'acquisition-plan',evidenceReceiptKind:'release',requiredCapability:'verified-release-event'}],
@@ -44,8 +44,8 @@ export const pack = {
     execution:{campaignPublication:'separate-human-authorization',spend:'separate-human-authorization',handoffIsLaunch:false} },
   runtimeRequirements:{handoff:'Host verifies release execution and outcome, project identity, source record payload digest, three pinned run-input provenance refs, and authenticated release evidence receipt. Core pins target Pack/Graph versions and the shared project before starting acquisition planning.',
     metrics:'Host authenticates metric source, freshness and observation window. Missing or stale data routes to unknown.',
-    shadow:'Host creates an independent reviewer session or agent, binds its execution identity, closes it after task, and retains audit.',
+    temporaryAgents:'Host creates a fresh scoped Sub-Agent task session for independent review and records its distinct execution identity. A Shadow-Agent requires a true fork that inherits parent context and is available only when the host supports it. Both close after the task and retain audit; neither is an organizational position.',
     scope:'Reject requests outside role with reason and reroute through the company CEO; mandatory or unresolved choices go to authenticated human owner.'}
 };
-pack.release = { digest:`sha256:${digest(JSON.stringify(pack))}`, builtAt:'2026-10-29T00:00:00.000Z', status:'candidate' };
+pack.release = { digest:`sha256:${digest(JSON.stringify(pack))}`, builtAt:'2026-10-30T00:00:00.000Z', status:'candidate' };
 export default pack;

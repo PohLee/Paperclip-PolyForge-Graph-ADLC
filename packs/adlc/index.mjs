@@ -69,12 +69,12 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 ));
 
 export const pack = {
-  id: 'adlc', version: '0.2.1', schemaVersion: 1,
+  id: 'adlc', version: '0.2.3', schemaVersion: 1,
   compatibility: {
-    coreRange: '>=0.8.1 <0.9.0',
+    coreRange: '>=0.8.4 <0.9.0',
     contracts: { graph: 1, decision: 1, evidence: 1 },
     requiredCapabilities: { 'company-control': '>=1.0.0 <2.0.0', 'cross-pack-plans': '>=1.0.0 <2.0.0', 'cross-pack-handoff': '>=1.0.0 <2.0.0' },
-    optionalCapabilities: { 'shadow-review-execution': '>=1.0.0 <2.0.0', 'verified-release-event': '>=1.0.0 <2.0.0', 'dashboard-read-model': '>=1.0.0 <2.0.0' }
+    optionalCapabilities: { 'temporary-agents': '>=1.0.0 <2.0.0', 'shadow-review-execution': '>=1.0.0 <2.0.0', 'verified-release-event': '>=1.0.0 <2.0.0', 'dashboard-read-model': '>=1.0.0 <2.0.0' }
   },
   organization: { executiveRole: 'ceo', roleScope: 'company', packRolesNamespace: 'adlc' },
   dashboard: {
@@ -120,7 +120,7 @@ export const pack = {
     triageSources: 'The host verifies issue/PR history, duplicate checks and reporter updates; it may pass a recorded ready triage report into discovery or implementation.',
     ticketTracker: 'The host retains completed ticket IDs and evidence, computes the ready frontier, and dispatches only unblocked work.',
     applicationVerification: 'The host supplies an isolated application harness and validates that the declared profile proof ran on the real surface; schema checks cannot authenticate observations.',
-    shadowVerification: 'Before verification/qa dispatch, the host must review the frozen candidate with the same bound Agent in a separate, scoped Shadow execution. The Shadow may only review one task, with one concurrent session and a deadline within 15 minutes. Only an accepted, closed Shadow result for the exact candidate permits normal QA dispatch; a non-accept result pauses the parent run for recovery. The subsequent QA artifact still receives its distinct supervisor review. This mechanism makes no paid-model quality claim.',
+    shadowVerification: 'Before verification/qa dispatch, the host must review the frozen candidate with the same bound Agent in a separate, fresh Sub-Agent task session. The Sub-Agent may only review one task, with one concurrent session and a deadline within 15 minutes. Only an accepted, closed Sub-Agent result for the exact candidate permits normal QA dispatch; a non-accept result pauses the parent run for recovery. The subsequent QA artifact still receives its distinct supervisor review. This mechanism makes no paid-model quality claim.',
     improvementGuardrails: 'The host verifies that a graduated improvement blocks a real past error and passes on the corrected path.'
   },
   optionalExternalMethods: {
@@ -179,6 +179,6 @@ export const pack = {
 };
 
 // The release digest identifies the deterministic pack payload, excluding its own digest.
-pack.release = { digest: `sha256:${digest(JSON.stringify(pack))}`, builtAt: '2026-10-29T00:00:00.000Z', status: 'candidate' };
+pack.release = { digest: `sha256:${digest(JSON.stringify(pack))}`, builtAt: '2026-10-30T00:00:00.000Z', status: 'candidate' };
 
 export default pack;
