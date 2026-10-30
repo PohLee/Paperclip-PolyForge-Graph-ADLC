@@ -14,6 +14,6 @@
     "build:marketing": "node scripts/build-pack.mjs marketing",
     "release:adlc": "node scripts/tag-pack.mjs adlc",
     "release:marketing": "node scripts/tag-pack.mjs marketing",
-    "test": "node --test"
+    "test": "node --test test/*.test.mjs"
   }
 }

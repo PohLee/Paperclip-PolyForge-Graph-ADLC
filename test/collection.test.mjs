@@ -12,10 +12,17 @@ test('collection exports two independent Pack releases and keeps ADLC default', 
   assert.equal(pack, defaultPack);
   assert.equal(pack, adlcPack);
   assert.deepEqual(Object.keys(packCatalog), ['adlc','marketing']);
-  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.3','marketing@0.0.3']);
+  assert.deepEqual(packs.map(item => `${item.id}@${item.version}`), ['adlc@0.2.4','marketing@0.0.4']);
   const engine = new GraphEngine();
   for (const item of packs) {
-    assert.equal(item.compatibility.coreRange, '>=0.8.4 <0.9.0');
+    assert.equal(item.compatibility.coreRange, '>=0.8.5 <0.9.0');
+    assert.equal(item.compatibility.optionalCapabilities['temporary-agent-snapshot'], '>=1.0.0 <2.0.0');
+    assert.match(item.skills['temporary-agent-snapshot'].content, /"operation": "open-temporary-agent"/);
+    assert.match(item.skills['temporary-agent-snapshot'].content, /"mode": "snapshot"/);
+    for (const role of Object.values(item.roles)) {
+      assert.ok(role.skills.includes('temporary-agent-snapshot'));
+      assert.match(`${role.documents.role}\n${role.documents.instruction}`, /bundled `temporary-agent-snapshot` skill/);
+    }
     assert.deepEqual(item.compatibility.contracts, CORE_RUNTIME.contracts);
     const { release, ...payload } = item;
     assert.equal(release.digest, `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`);

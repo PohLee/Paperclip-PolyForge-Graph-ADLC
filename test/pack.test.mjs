@@ -64,7 +64,7 @@ test('ADLC department heads report to the company CEO without changing review es
     'principal-engineer': 'cto-caio', 'lead-engineer': 'principal-engineer',
     'qa-engineer': 'cto-caio', 'security-engineer': 'cto-caio'
   };
-  assert.equal(pack.version, '0.2.3');
+  assert.equal(pack.version, '0.2.4');
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.reportsToRole])), reportsTo);
   assert.deepEqual(Object.fromEntries(Object.values(pack.roles).map(role => [role.id, role.supervisorRole])), reviewEscalation);
   assert.equal(Object.values(pack.roles).filter(role => role.reportsToRole === 'ceo').length, 2);
@@ -541,7 +541,7 @@ test('observed ADLC release hands off to Marketing only for the same project and
   assert.equal(run.input.projectId, 'project-1');
   await assert.rejects(engine.startRun({ packId:'marketing', packVersion:marketingPack.version, graphId:'acquisition-plan',
     input:{ ...input, projectId:'project-2' }, actor:owner, mode:'manual' }), /Handoff does not authorize/);
-  const next = structuredClone(marketingPack); next.version = '0.0.4';
+  const next = structuredClone(marketingPack); next.version = marketingPack.version.replace(/\d+$/, patch => String(Number(patch) + 1));
   const { release:_oldRelease, ...nextPayload } = next;
   next.release = { ...next.release, digest:`sha256:${createHash('sha256').update(JSON.stringify(nextPayload)).digest('hex')}` };
   await engine.registerPack(next);

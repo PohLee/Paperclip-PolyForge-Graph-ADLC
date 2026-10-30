@@ -31,12 +31,14 @@ for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'qa-engin
 for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer', 'qa-engineer']) roleSkills[role].push('technical-design-review');
 for (const role of ['cto-caio', 'principal-engineer', 'lead-engineer']) roleSkills[role].push('design-drift');
 roleSkills.cpo.push('verification-review');
+for (const skillsForRole of Object.values(roleSkills)) skillsForRole.push('temporary-agent-snapshot');
 const skillIds = [...new Set(Object.values(roleSkills).flat())];
 if (skillIds.length !== Object.keys(skillCatalog).length || skillIds.some(id => !skillCatalog[id])) {
   throw new Error('Every assigned ADLC skill needs discovery metadata');
 }
 const skills = Object.fromEntries(skillIds.map(id => {
-  const source = `skills/${id}.md`, content = readFileSync(resolve(root, source), 'utf8');
+  const source = id === 'temporary-agent-snapshot' ? '../../docs/TEMPORARY_AGENT_SNAPSHOT.md' : `skills/${id}.md`;
+  const content = readFileSync(resolve(root, source), 'utf8');
   return [id, { id, source, content, digest: digest(content), ...skillCatalog[id] }];
 }));
 
@@ -69,12 +71,12 @@ const decisionRules = Object.values(roles).flatMap(role => role.decisionModel.ru
 ));
 
 export const pack = {
-  id: 'adlc', version: '0.2.3', schemaVersion: 1,
+  id: 'adlc', version: '0.2.4', schemaVersion: 1,
   compatibility: {
-    coreRange: '>=0.8.4 <0.9.0',
+    coreRange: '>=0.8.5 <0.9.0',
     contracts: { graph: 1, decision: 1, evidence: 1 },
     requiredCapabilities: { 'company-control': '>=1.0.0 <2.0.0', 'cross-pack-plans': '>=1.0.0 <2.0.0', 'cross-pack-handoff': '>=1.0.0 <2.0.0' },
-    optionalCapabilities: { 'temporary-agents': '>=1.0.0 <2.0.0', 'shadow-review-execution': '>=1.0.0 <2.0.0', 'verified-release-event': '>=1.0.0 <2.0.0', 'dashboard-read-model': '>=1.0.0 <2.0.0' }
+    optionalCapabilities: { 'temporary-agents': '>=1.0.0 <2.0.0', 'temporary-agent-snapshot': '>=1.0.0 <2.0.0', 'shadow-review-execution': '>=1.0.0 <2.0.0', 'verified-release-event': '>=1.0.0 <2.0.0', 'dashboard-read-model': '>=1.0.0 <2.0.0' }
   },
   organization: { executiveRole: 'ceo', roleScope: 'company', packRolesNamespace: 'adlc' },
   dashboard: {
@@ -121,6 +123,7 @@ export const pack = {
     ticketTracker: 'The host retains completed ticket IDs and evidence, computes the ready frontier, and dispatches only unblocked work.',
     applicationVerification: 'The host supplies an isolated application harness and validates that the declared profile proof ran on the real surface; schema checks cannot authenticate observations.',
     shadowVerification: 'Before verification/qa dispatch, the host must review the frozen candidate with the same bound Agent in a separate, fresh Sub-Agent task session. The Sub-Agent may only review one task, with one concurrent session and a deadline within 15 minutes. Only an accepted, closed Sub-Agent result for the exact candidate permits normal QA dispatch; a non-accept result pauses the parent run for recovery. The subsequent QA artifact still receives its distinct supervisor review. This mechanism makes no paid-model quality claim.',
+    temporaryAgents: 'For research or analysis, an enabled parent Agent may open a Shadow-Agent in snapshot mode. The host starts a separate session for the same Agent and freezes the parent advisory summary with Core-selected Decision Records and product history at launch. Snapshot provenance and digest identify that boundary; the summary grants no authority. Independent review uses a fresh Sub-Agent. The bundled temporary-agent-snapshot skill supplies the request and evidence rules.',
     improvementGuardrails: 'The host verifies that a graduated improvement blocks a real past error and passes on the corrected path.'
   },
   optionalExternalMethods: {

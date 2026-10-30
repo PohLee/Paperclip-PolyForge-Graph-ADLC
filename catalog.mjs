@@ -9,7 +9,9 @@ import { packs as sourcePacks, packCatalog as sourcePackCatalog } from './index.
 const installedReleasePaths = [
   ['adlc', '0.2.0'],
   ['adlc', '0.2.1'],
+  ['adlc', '0.2.3'],
   ['marketing', '0.0.1'],
+  ['marketing', '0.0.3'],
 ];
 const root = fileURLToPath(new URL('.', import.meta.url));
 

@@ -2,7 +2,7 @@
 
 Versioned Agentic Development Life Cycle domain pack for the separate [PolyForge Graph core](../../../Paperclip-PolyForge-Graph). Import `pack` from `index.mjs`, register it with `GraphEngine.registerPack(pack)`, and bind its role IDs to real Paperclip agents or authenticated human operations in the host. The pack contains no agent UUIDs or installed-tool claims.
 
-Current pack version: `adlc@0.2.3`, targeting pinned Core `>=0.8.4 <0.9.0`. Design is `0.1.2`, discovery is `0.1.1`, verification is `0.1.5`, implementation is `0.1.5`, and other graphs are `0.1.0`. Every artifact-producing task requires an attempt-bound work Decision Record. See [evidence contracts and input examples](docs/EVIDENCE_CONTRACTS.md), [method/agent mapping](docs/FACTORY_BLUEPRINT_ADAPTATION.md), [MCode adaptation](docs/MCODE_STACK_ADAPTATION.md), [Matt/pstack adaptation](docs/MATT_PSTACK_ADAPTATION.md), and [Elephant Goldfish research](docs/ELEPHANT_GOLDFISH_RESEARCH.md).
+Current pack version: `adlc@0.2.4`, targeting pinned Core `>=0.8.5 <0.9.0`. Design is `0.1.2`, discovery is `0.1.1`, verification is `0.1.5`, implementation is `0.1.5`, and other graphs are `0.1.0`. Every artifact-producing task requires an attempt-bound work Decision Record. See [evidence contracts and input examples](docs/EVIDENCE_CONTRACTS.md), [method/agent mapping](docs/FACTORY_BLUEPRINT_ADAPTATION.md), [MCode adaptation](docs/MCODE_STACK_ADAPTATION.md), [Matt/pstack adaptation](docs/MATT_PSTACK_ADAPTATION.md), and [Elephant Goldfish research](docs/ELEPHANT_GOLDFISH_RESEARCH.md).
 
 ## Included workflows
 
@@ -25,6 +25,8 @@ Design and implementation use bounded `reworkTarget` resets that keep prior atte
 
 Verification QA requires host capability `shadow-review-execution@>=1.0.0 <2.0.0` on that Graph only. After `freeze-candidate`, the host starts a fresh Sub-Agent task session bound to the same QA Agent to review the exact frozen candidate before dispatching normal QA. Its scope is one review task, one concurrent session, and at most 15 minutes. Only an accepted and closed result permits QA dispatch. A rejected, failed, expired, or otherwise non-accepted result pauses the parent run for recovery without a supervisor bypass. The ordinary QA artifact still receives its independent CTO + CAIO review. This is a provenance and workflow gate, not a claim that a paid model improves review quality. Other ADLC and Marketing Graphs do not require this review. The legacy `shadow` Graph field and `shadow-review-execution` capability name remain for pinned Graph compatibility; their execution is a fresh Sub-Agent session, not a session fork.
 
+For bounded research or analysis that benefits from current task context, an enabled parent Agent can open a same-Agent Shadow-Agent with `context.mode: "snapshot"` when the host reports `temporary-agent-snapshot:1.0.0`. Core freezes the parent summary and relevant authority records at launch. The summary is advisory; active approvals come from Core-selected Decision Records. The bundled `temporary-agent-snapshot` skill gives the `company-command` request, provenance rules and host limits. This is separate from the verification review above.
+
 ## Runtime contract
 
 ```js
@@ -34,7 +36,7 @@ await engine.startRun({ packId: pack.id, packVersion: pack.version,
   graphId: 'implementation', mode: 'assisted', input, actor });
 ```
 
-The host supplies trusted actor identity, role bindings, execution identity, available capabilities, and versioned artifacts. The `roles` map contains five Markdown documents per role and SHA-256 digests. `decisionRules` are parsed from role decision models. Twenty-seven bundled skills are carried in `pack.skills`; each role lists the skills it uses. The host provides them to the runtime and resolves real capabilities. Supervisor review uses a distinct execution identity. Normal human gates need `human-owner` plus the gate's domain role; resolving an escalated human gate requires authenticated `human-owner` authority.
+The host supplies trusted actor identity, role bindings, execution identity, available capabilities, and versioned artifacts. The `roles` map contains five Markdown documents per role and SHA-256 digests. `decisionRules` are parsed from role decision models. Twenty-eight bundled skills are carried in `pack.skills`; each role lists the skills it uses. The host provides them to the runtime and resolves real capabilities. Supervisor review uses a distinct execution identity. Normal human gates need `human-owner` plus the gate's domain role; resolving an escalated human gate requires authenticated `human-owner` authority.
 
 Discovery starts from a sourced request without an approved product decision. An `advance` decision accepts the versioned intent for requirements definition; before the existing design or implementation graphs start, the host must record the approved product decision and pass exact requirement and design identities. The release process graph stops at `ready_for_host_execution`. The host then performs the release with its actual procedure and starts release observation only after supplying the execution event, plan identity, authorization decision and candidate identity. The pack does not select a pipeline, execute production changes, or provide full release certification. Before production monitoring starts, the host supplies a versioned monitoring plan with service owner, signal definitions, sources, thresholds, freshness and action owner. The graph evaluates one supplied window; telemetry ingestion, scheduling, paging and recovery execution remain host capabilities.
 
@@ -62,7 +64,7 @@ Every required evidence item is identified by `kind`. Gate evidence must also re
 
 ## Maintenance
 
-Edit `roles/catalog.mjs`, then run `node packs/adlc/scripts/build-roles.mjs` to refresh the agent Markdown. Review the generated `decision_model.md` blocks: they are the runtime source of decision authority. Increment the pack and affected graph versions before publishing changed behavior. Existing runs retain the previous snapshot.
+Edit `roles/catalog.mjs` or `scripts/build-roles.mjs`, then run `node packs/adlc/scripts/build-roles.mjs` to refresh the agent Markdown. Review the generated `decision_model.md` blocks: they are the runtime source of decision authority. Increment the Pack version when its documents change, and a Graph version when its schema or behavior changes. Existing runs retain the previous pinned release.
 
 Validate with `node --test`. The tests use the sibling core source and require both repositories side by side.
 
